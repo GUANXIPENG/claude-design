@@ -4,7 +4,7 @@
 
 ## 1. 当前项目阶段
 
-当前项目处于：**MVP Scaffold 已建立，等待 Phase 2 前端闭环开发**。
+当前项目处于：**Phase 2 前端闭环已完成，等待 Phase 3 持久化与认证开发**。
 
 理由：
 
@@ -14,7 +14,7 @@
 - 已完成 `npm install`、`npm run test`、`npm run typecheck`、`npm run lint`、`npm run build` 和 production server HTTP 验收。
 - 当前仍未实现真实 AI、Supabase Auth、数据库、Sandpack、导出、版本回退、额度记录和工作台闭环。
 
-因此，当前重点应从 Phase 1 scaffold 转向 Phase 2：用 fixture/mock 数据补齐首页、项目列表、工作台三栏、输入区、预览区和代码视图区的前端闭环。
+因此，当前重点应从 Phase 2 前端闭环转向 Phase 3：接入轻量账号、项目归属、数据库持久化和基础额度记录，同时继续保持真实 AI、导出、版本回退等能力按后续阶段推进。
 
 ## 2. 当前已经完成的内容
 
@@ -36,6 +36,25 @@
 | README / 文档 | README 已补充 | `README.md`、`docs/requirements.md`、`docs/PRD.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | 已说明 Phase 1 范围、启动方式和未实现能力 |
 | 环境变量配置 | 示例已补充 | `.env.example` | 不包含真实密钥；真实 `.env` 仍应本地私有 |
 | Git / GitHub / Issue 管理 | 远程已配置；无提交；Issue 状态待确认 | `.git/` | `origin` 指向 `https://github.com/GUANXIPENG/claude-design.git`；未检查 GitHub Issue |
+
+### 2.1 2026-05-08 Phase 2 已完成内容
+
+本次已完成 Issue #2 的 Phase 2 前端闭环：
+
+- 首页已从 Phase 1 scaffold 占位更新为 Phase 2 入口页，提供进入项目列表和工作台的导航。
+- 新增登录占位页，用于明确 Phase 3 才会接入 Supabase Auth；当前不包含真实会话、私有项目访问或额度持久化。
+- 新增项目列表页，使用 fixture 项目展示项目名称、描述、更新时间、页面数、版本数和打开工作台入口。
+- 新增工作台页，包含顶部操作栏、左侧页面列表、中间预览、代码视图和右侧对话输入面板。
+- 新增 `src/lib/fixtures/workspace.ts`，用静态 fixture 数据表达多页面项目、页面路由、预览内容和代码视图内容。
+- 工作台支持基于 fixture 的页面切换；切换页面会更新预览和代码视图，但不会清空右侧输入草稿。
+- 工作台支持空输入提示、生成中状态和成功占位状态；所有状态均明确标注为 mock/fixture，不会触发真实 AI 请求。
+- `npm run test` 已扩展为同时运行 Phase 1 scaffold 检查和 Phase 2 workspace 检查。
+
+本次未实现：
+
+- 未接入真实 OpenAI、Supabase Auth、Supabase PostgreSQL、Drizzle、Sandpack、导出、版本回退或额度扣减。
+- 未实现真实项目持久化；fixture 只用于前端闭环验证，不作为项目主数据源。
+- 未实现真实登录保护；登录页仅作为 Phase 3 的可见占位。
 
 ## 3. 当前未完成的内容
 
@@ -403,3 +422,36 @@
 
 - 在普通本机终端重新执行 `npm run dev`，确认开发服务器在非 Codex sandbox 环境下可启动。
 - 进入 Phase 2 前端闭环前，优先补项目列表和工作台 fixture 页面，继续保持真实 AI、Supabase 和导出能力不接入。
+
+## 11. 2026-05-08 Phase 2 开发更新
+
+本次已完成 Phase 2 的 fixture/mock 前端闭环：
+
+- 创建 GitHub Issue #2：`feat: implement phase 2 frontend workspace loop`。
+- 创建独立开发分支：`feat-issue-2-phase-2-frontend-loop`。因当前 Git refs 写入环境无法创建 `feat/issue-2-...` 斜杠分支名，本次使用等价的独立分支名。
+- 新增 `/login`、`/projects`、`/workspace` 路由。
+- 更新首页 `/`，提供进入项目列表和工作台的 Phase 2 主入口。
+- 新增 `ProjectListPage`，展示 fixture 项目列表和打开工作台入口。
+- 新增 `WorkspacePage`，实现三栏工作台、页面切换、预览、代码视图、对话输入、空输入提示、生成中状态和成功占位状态。
+- 新增 `src/lib/fixtures/workspace.ts`，集中维护 Phase 2 fixture 项目、页面、文件和 prototype 边界说明。
+- 新增 `tests/phase2-workspace.test.mjs`，验证 Phase 2 文件、fixture 数据和关键工作台行为标记。
+- 更新 `tests/phase1-scaffold.test.mjs` 和 `package.json`，让 `npm run test` 同时覆盖 Phase 1 和 Phase 2 检查。
+- 更新 `tsconfig.json`，排除 `.next` 构建产物，避免独立 `tsc --noEmit` 在 build 后扫描生成文件导致类型检查不稳定。
+
+本次验收结果：
+
+- 已执行 `npm.cmd run test`，Phase 1 scaffold 检查和 Phase 2 workspace 检查均通过。
+- 已执行 `npm.cmd run typecheck`，TypeScript 校验通过。
+- 已执行 `npm.cmd run lint`，ESLint 校验通过。
+- 已执行 `npm.cmd run build`，Next.js production build 通过，静态路由包含 `/`、`/login`、`/projects`、`/workspace`。
+
+当前仍存在的环境限制：
+
+- PowerShell 直接执行 `npm run ...` 会被本机执行策略拦截 `npm.ps1`，本次改用 `npm.cmd run ...` 执行同等 npm 脚本。
+- `npm run dev` 在当前 Codex Windows 执行环境中仍可能因 `spawn EPERM` 受限，开发服务器建议继续在普通本机终端复验。
+
+下一阶段建议：
+
+- 进入 Phase 3：接入 Supabase Auth、项目归属、数据库持久化和基础额度记录。
+- 在 Phase 3 前补充最小认证/项目持久化 Issue，明确未登录访问、项目归属和 localStorage 仅用于草稿/UI 状态的验收标准。
+- 保持 Phase 2 fixture 边界清晰，避免把 mock 项目数据误当作真实持久化数据源。

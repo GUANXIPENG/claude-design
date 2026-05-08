@@ -12,7 +12,7 @@
 - Phase 1 已新增 `package.json`、`package-lock.json`、`README.md`、`.env.example`、Next.js App Router 页面入口、Tailwind 配置、TypeScript 配置和基础测试脚本。
 - 已建立 `src/app`、`src/components`、`src/features`、`src/lib`、`src/server`、`src/schemas`、`src/prompts`、`src/types` 目录边界。
 - 已完成 `npm install`、`npm run test`、`npm run typecheck`、`npm run lint`、`npm run build` 和 production server HTTP 验收。
-- 当前仍未实现真实 AI、Supabase Auth、数据库、Sandpack、导出、版本回退、额度记录和工作台闭环。
+- 当前已实现 fixture/mock 驱动的前端工作台闭环，但仍未实现真实 AI、Supabase Auth、数据库、Sandpack、导出、版本回退和额度记录。
 
 因此，当前重点应从 Phase 2 前端闭环转向 Phase 3：接入轻量账号、项目归属、数据库持久化和基础额度记录，同时继续保持真实 AI、导出、版本回退等能力按后续阶段推进。
 
@@ -20,22 +20,22 @@
 
 | 模块 | 当前状态 | 相关文件 | 备注 |
 |---|---|---|---|
-| 项目初始化 | Git 仓库已存在，当前开发分支为 `phase-1-scaffold`，远程 `origin` 已配置 | `.git/` | Phase 1 scaffold 改动已准备提交；Issue 编号仍待补 |
+| 项目初始化 | Git 仓库已存在，当前开发分支为 `feat-issue-2-phase-2-frontend-loop`，远程 `origin` 已配置 | `.git/` | Issue #2 已完成并关闭；本地分支尚未推送 |
 | 需求文档 | 已完成第一版产品需求梳理 | `docs/requirements.md` | 覆盖产品定位、MVP/P1/P2、功能需求、非功能需求、导出、多页面、对话修改、局部修改、版本、账号、额度、风险 |
 | PRD | 已完成结构化 PRD | `docs/PRD.md` | 覆盖用户角色、用户流程、页面清单、功能列表、Given/When/Then 验收标准、状态设计、视觉风格、信息架构、MVP 边界 |
 | 架构草案 | 已完成技术栈锁定与架构基线 | `docs/architecture.md` | 锁定 Next.js、TypeScript、Tailwind、Supabase、Drizzle、OpenAI Responses API、Zod、Sandpack、Vercel、Vitest、Playwright 等方向 |
-| 前端页面框架 | Phase 1 最小入口已实现 | `src/app/page.tsx`、`src/app/layout.tsx`、`src/app/globals.css` | 仅为 scaffold 占位页，不包含 Phase 2 工作台闭环 |
-| 对话输入区 | 未实现 | 无 | 目前只有 PRD 和需求描述，没有 UI 或状态逻辑 |
-| 生成结果展示区 | 未实现 | 无 | 没有预览容器、文件树、代码查看或生成结果结构 |
-| live preview / code view | 未实现 | 无 | Sandpack 只在架构文档中作为技术基线，尚未接入 |
+| 前端页面框架 | Phase 2 首页、登录占位、项目列表和工作台入口已实现 | `src/app/page.tsx`、`src/app/login/page.tsx`、`src/app/projects/page.tsx`、`src/app/workspace/page.tsx`、`src/app/layout.tsx`、`src/app/globals.css` | 使用 fixture/mock 数据，不包含真实 Auth、AI、DB 或导出 |
+| 对话输入区 | Phase 2 mock 输入区已实现 | `src/features/workspace/components/WorkspacePage.tsx` | 支持草稿、空输入提示、生成中和成功占位状态；不触发真实 AI |
+| 生成结果展示区 | Phase 2 fixture 预览和代码视图已实现 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | 展示 fixture 页面内容和文件内容；不是真实生成结果 |
+| live preview / code view | 代码视图和静态预览已实现；真实 Sandpack 未接入 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | Sandpack 仍只在架构文档中作为后续技术基线 |
 | 项目历史 / 本地存储 | 未实现 | 无 | 版本快照、历史、回退和本地草稿均未实现 |
 | API route | 未实现 | 无 | 没有服务端路由或 Server Actions |
 | OpenAI 调用预留 | 仅有架构文档预留 | `docs/architecture.md` | 没有 SDK、环境变量、服务端 provider adapter 或 prompt 文件 |
 | 导出功能 | 未实现 | 无 | 仅 PRD 和架构中定义需求与服务端边界 |
-| 测试文件 | Phase 1 scaffold 检查已实现 | `tests/phase1-scaffold.test.mjs` | 仅覆盖 scaffold 存在性；业务、schema、API、E2E 测试仍未建立 |
-| README / 文档 | README 已补充 | `README.md`、`docs/requirements.md`、`docs/PRD.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | 已说明 Phase 1 范围、启动方式和未实现能力 |
+| 测试文件 | Phase 1 scaffold 检查和 Phase 2 workspace 检查已实现 | `tests/phase1-scaffold.test.mjs`、`tests/phase2-workspace.test.mjs` | 覆盖 scaffold、fixture 文件和关键工作台行为标记；schema、API、E2E 测试仍未建立 |
+| README / 文档 | README 和项目状态文档已同步 Phase 2 | `README.md`、`docs/requirements.md`、`docs/PRD.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | README 和 PROJECT_STATUS 已说明 Phase 2 范围、启动方式、检查命令和未实现能力 |
 | 环境变量配置 | 示例已补充 | `.env.example` | 不包含真实密钥；真实 `.env` 仍应本地私有 |
-| Git / GitHub / Issue 管理 | 远程已配置；无提交；Issue 状态待确认 | `.git/` | `origin` 指向 `https://github.com/GUANXIPENG/claude-design.git`；未检查 GitHub Issue |
+| Git / GitHub / Issue 管理 | 远程已配置；Issue #2 已关闭；本地已有 Phase 2 单文件 commits | `.git/` | `origin` 指向 `https://github.com/GUANXIPENG/claude-design.git`；当前分支尚未 push |
 
 ### 2.1 2026-05-08 Phase 2 已完成内容
 
@@ -64,10 +64,10 @@
 | 包管理器与依赖 | 已安装 Node/npm 并生成 `package-lock.json` | Codex 环境下 `npm run dev` 仍因 `spawn EPERM` 受限 | 否，构建与 production server 验收已通过 | Phase 2 前在普通终端复验 |
 | README | 已补充启动、开发、环境变量、脚本说明 | 后续阶段需持续同步新增功能 | 否 | 持续更新 |
 | `.env.example` | 已补充 Supabase、OpenAI、站点 URL 等变量示例 | 后续接入服务时需确认变量是否完整 | 否 | Phase 3 / Phase 4 |
-| 首页 / 登录 / 项目列表 / 工作台页面 | 页面和布局均未实现 | PRD 的核心用户路径无法验证 | 是 | Phase 2 |
-| 对话输入区 | 输入框、提交状态、空值校验、修改模式均未实现 | 是生成和迭代的入口 | 是 | Phase 2 |
-| 生成结果展示区 | 页面清单、文件树、代码视图、预览容器未实现 | 无法展示 AI 生成结果 | 是 | Phase 2 |
-| Sandpack 预览 | 预览沙盒、文件映射、错误显示未接入 | MVP 要求可预览项目 | 是 | Phase 2 |
+| 首页 / 登录 / 项目列表 / 工作台页面 | Phase 2 fixture/mock 页面和布局已实现；真实 Auth/DB 仍未接入 | PRD 核心用户路径已有前端壳，可继续接持久化 | 否，前端壳已解除；真实私有项目仍阻塞 MVP | Phase 3 |
+| 对话输入区 | Phase 2 mock 输入区已实现；真实 AI 修改模式未接入 | 生成和迭代入口已有 UI，后续需接服务端生成 | 否，UI 已解除；真实生成仍阻塞 MVP | Phase 4 |
+| 生成结果展示区 | Phase 2 fixture 页面清单、预览和代码视图已实现；真实 AI 文件树未接入 | 可展示 mock 生成结果，后续需接 schema 校验后的 AI 输出 | 否，前端壳已解除；真实生成仍阻塞 MVP | Phase 4 |
+| Sandpack 预览 | Phase 2 静态预览和代码视图已实现；真实 Sandpack 沙盒未接入 | MVP 最终需要受控运行生成文件 | 是 | Phase 4 |
 | 真实 AI 生成逻辑 | 服务端 OpenAI 调用、prompt、结构化输出、Zod 校验未实现 | 产品核心能力依赖 AI 生成 | 是 | Phase 4 |
 | Supabase Auth | 轻量账号登录、会话、访问保护未实现 | 项目归属和私有项目依赖账号 | 是 | Phase 3 |
 | 数据库 schema | User、Project、Page、Version、Generation、Quota 等表未建立 | 项目持久化、版本和额度记录无法落地 | 是 | Phase 3 |
@@ -78,7 +78,7 @@
 | 导出功能 | 静态文件导出、可编辑项目结构导出、导出记录未实现 | 用户无法带走生成结果 | 是 | Phase 4 |
 | 额度限制 | 使用次数记录、额度提示、限制逻辑未实现 | 成本控制和未来商业化需要基础记录 | 是，基础记录阻塞；真实订阅不阻塞 | Phase 3 / Phase 4 |
 | 部署配置 | Vercel 配置、环境变量、构建脚本缺失 | 无法部署预览或生产环境 | 是，部署前阻塞 | Phase 5 |
-| 测试覆盖 | Vitest、schema fixtures、API 测试、Playwright 未建立 | 无法验证核心流程和安全边界 | 是，至少最小测试阻塞可发布 MVP | Phase 5 |
+| 测试覆盖 | Phase 1/2 脚本检查已建立；Vitest、schema fixtures、API 测试、Playwright 未建立 | 目前能验证 scaffold 与前端壳文件边界，无法验证核心服务端流程和安全边界 | 是，至少最小业务/安全测试阻塞可发布 MVP | Phase 5 |
 
 ## 4. 已知问题和阻塞点
 
@@ -87,7 +87,7 @@
 | 问题描述 | 影响范围 | 可能原因 | 建议解决方式 | 优先级 |
 |---|---|---|---|---|
 | Codex 环境中 `npm run dev` 返回 `spawn EPERM` | 无法在当前沙箱内验证 Next dev server | Next dev 内部使用 `child_process.fork`，当前环境限制 spawn | 在普通本机终端复验 `npm run dev`；当前以 build + `next start` HTTP 验收替代 | P1 |
-| 真实业务页面尚未实现 | 用户无法体验项目列表和工作台主流程 | Phase 1 仅建立 scaffold | Phase 2 用 fixture/mock 数据实现前端闭环 | P0 |
+| 真实业务页面尚未接入持久化 | 用户可以体验 fixture 项目列表和工作台主流程，但无法保存真实项目 | Phase 2 仅实现前端壳 | Phase 3 接入 Auth、项目归属和数据库持久化 | P0 |
 | 真实 AI/Auth/DB/导出未接入 | MVP 核心能力仍不可用 | 尚未进入 Phase 3/4 | 按阶段接入 Supabase、Drizzle、OpenAI、Sandpack、导出和版本能力 | P0 |
 
 ### 4.2 高优先级问题
@@ -97,7 +97,7 @@
 | AI 生成逻辑未接入 | 产品核心能力不可用 | 尚无服务端代码和 OpenAI provider adapter | 先实现 mock/fixture 驱动的生成结果，再接 OpenAI 服务端调用 | P1 |
 | Supabase Auth 未接入 | 项目归属、私有项目、额度记录无法落地 | 尚无后端和环境变量 | Phase 3 接入轻量账号和访问保护 | P1 |
 | 数据库 schema 未建立 | 项目、页面、版本、对话、导出、额度无法持久化 | 尚未创建 Drizzle schema | 按架构草案建立最小表结构 | P1 |
-| Sandpack 预览未接入 | 无法预览生成项目 | 前端工作台未实现 | Phase 2 先接静态 fixture 预览，Phase 4 接 AI 结果 | P1 |
+| Sandpack 预览未接入 | 当前只能静态预览 fixture，无法运行生成项目文件 | Phase 2 只实现前端壳和代码视图 | Phase 4 接 Sandpack 和 AI 结果 | P1 |
 | 版本快照和回退未实现 | 修改风险高，用户无法撤销 | 无持久化和版本模型 | 在 AI 生成前先定义项目级快照结构 | P1 |
 | 导出功能未实现 | 用户无法保存或交付生成结果 | 无服务端导出逻辑 | Phase 4 实现当前版本导出，先限制文件范围 | P1 |
 | OpenAI key server-only 边界未落地 | 存在未来泄露风险 | 没有服务端实现 | 任何 AI 接入必须只在服务端读取密钥 | P1 |
@@ -112,7 +112,7 @@
 | 额度扣减策略未定 | 成本提示、导出、订阅 | PRD 和架构均保留待确认 | MVP 先按操作次数记录，后续补 token 成本 | P2 |
 | 响应式预览是否进入 MVP 待确认 | 工作台控件和验收范围 | PRD 建议 P1 三视口，MVP 可先基础预览 | Phase 2 先保留视口入口或只做桌面预览 | P2 |
 | 导出是否消耗额度待确认 | 成本控制和用户预期 | PRD 中明确待确认 | MVP 先记录导出行为，不做真实扣减 | P2 |
-| TODO / placeholder / mock 数据主要存在于文档描述，不是代码实现 | 暂不影响运行，但未来实现时要避免 mock 混入生产 | 当前没有代码 | 建立 fixture 与 production 数据边界 | P3 |
+| TODO / placeholder / mock 数据已进入 Phase 2 前端壳 | 暂不影响运行，但未来实现时要避免 mock 混入生产 | 当前使用 `src/lib/fixtures/workspace.ts` 驱动前端闭环 | Phase 3/4 建立 fixture 与 production 数据边界 | P3 |
 | 项目边界文档未单独存在 | 新开发者需要从多份文档拼上下文 | 需求、PRD、架构已分散覆盖边界 | 如后续需要，可新增独立边界文档或在 README 汇总 | P3 |
 
 ## 5. 下一步开发计划
@@ -357,26 +357,26 @@
 
 ## 8. 当前代码质量评价
 
-当前几乎没有代码可评价。仓库只有文档，没有业务代码、组件、服务端逻辑、测试或配置。因此，以下评价更多是“当前工程状态评价”，不是对代码实现质量的评价。
+当前已有 Phase 1 scaffold 和 Phase 2 fixture/mock 前端代码。以下评价聚焦当前工程状态：前端壳已可运行，但真实服务端、AI、数据库、Sandpack、导出、版本和额度逻辑仍未实现。
 
 | 评价维度 | 当前评价 | 真实问题 |
 |---|---|---|
-| 目录结构是否清晰 | 文档目录清晰；源码目录不存在 | 还没有 `src/`、`app/`、`components/`、`features/` 等实际结构 |
-| 前后端边界是否清晰 | 文档中边界清晰 | 代码中尚未落地，无法验证是否遵守 |
-| 服务端逻辑是否安全 | 架构文档定义了 server-only 原则 | 无服务端代码，无法验证 OpenAI key、数据库访问、日志脱敏 |
-| 组件是否过大 | 待确认 | 当前无组件 |
-| 状态管理是否合理 | 架构建议合理 | 当前无状态管理实现 |
-| 类型定义是否完整 | 架构提出 TypeScript + Zod | 当前无类型定义和 schema 文件 |
-| 错误处理是否充分 | PRD 和架构描述充分 | 当前无运行时错误处理实现 |
-| 测试是否足够 | 不足 | 当前无测试文件、测试脚本或 CI |
-| 是否存在明显重构点 | 最大重构点是从“文档仓库”转为“可运行工程” | 需要先建立 scaffold、目录边界、脚本、README、环境变量示例 |
+| 目录结构是否清晰 | 已建立 `src/app`、`src/features`、`src/lib/fixtures` 等基础结构 | 后续 Phase 3/4 需要继续补 `server`、`schemas`、`prompts` 的真实实现 |
+| 前后端边界是否清晰 | 当前 Phase 2 仅前端 fixture，没有引入服务端敏感逻辑 | 后续接 AI/Auth/DB 时仍需验证 server-only 边界 |
+| 服务端逻辑是否安全 | 暂无真实服务端业务逻辑 | 无法验证 OpenAI key、数据库访问、日志脱敏和权限校验 |
+| 组件是否过大 | 当前组件规模可接受 | `WorkspacePage` 后续接真实 Sandpack、版本、导出时需要继续拆分 |
+| 状态管理是否合理 | 当前只用 React 本地状态处理页面选择、草稿和 mock 生成状态 | 真实项目数据仍需服务端/数据库作为主数据源 |
+| 类型定义是否完整 | fixture 数据已有 TypeScript 类型 | 尚无 Zod schema、AI 输出 schema 和数据库类型 |
+| 错误处理是否充分 | Phase 2 覆盖空输入和 mock 状态提示 | 尚未覆盖真实网络、AI、保存、权限、导出失败 |
+| 测试是否足够 | 已有 Phase 1/2 脚本检查 | 仍缺 Vitest、Playwright、schema/API/安全测试 |
+| 是否存在明显重构点 | 下一步重点是从 fixture 前端壳转向持久化和认证 | 需要避免 mock 数据继续扩散为生产数据源 |
 
 ### 当前代码质量结论
 
-- 文档质量较完整，已经足以指导下一阶段 scaffold。
-- 工程质量尚未开始，因为没有应用代码。
-- 不应在没有 scaffold 的情况下继续扩展 PRD 或架构细节。
-- 下一步最重要的是建立最小可运行项目，并把架构文档中的边界落实到目录、脚本和最小测试中。
+- 文档质量较完整，已经足以指导 Phase 3 持久化与认证。
+- 工程已有可运行 scaffold 和 Phase 2 前端壳，但真实业务能力仍未接入。
+- 不应把 Phase 2 fixture 误认为真实 AI、Auth、DB、Sandpack、导出或版本能力。
+- 下一步最重要的是建立轻量账号、项目归属、数据库持久化和基础额度记录，并继续保持 server-only 安全边界。
 
 ## 9. 持续更新规则
 

@@ -1,24 +1,28 @@
 # AI Design Workspace
 
-Phase 1 turns this repository from documentation only into a minimal runnable
-Next.js application scaffold.
+Phase 2 turns the minimal scaffold into a fixture-driven front-end workspace
+loop for validating the visible MVP shell.
 
 ## Current Stage
 
-This is not the full MVP. The current app only establishes the engineering
-foundation described in `docs/PROJECT_STATUS.md`:
+This is not the full MVP. The current app establishes the engineering
+foundation and a mock front-end workspace described in `docs/PROJECT_STATUS.md`:
 
 - Next.js App Router with TypeScript.
 - Tailwind CSS global styling.
 - Source directories for app, components, features, lib, server, schemas,
   prompts, and shared types.
-- Placeholder homepage that confirms the app can render.
+- Phase 2 homepage with links to fixture projects and workspace.
+- Login placeholder route for the future Supabase Auth boundary.
+- Fixture project list and three-panel workspace shell.
+- Static preview and code view driven by `src/lib/fixtures/workspace.ts`.
+- Mock generation states for empty input, generating, and ready feedback.
 - Environment variable examples without real secrets.
-- A minimal scaffold verification script.
+- Phase 1 scaffold and Phase 2 workspace verification scripts.
 
 Real AI generation, Supabase Auth, database persistence, Sandpack preview,
-export, quota logic, version rollback, and workspace flows are intentionally
-not implemented in Phase 1.
+export, quota logic, and version rollback are intentionally not implemented in
+Phase 2. The workspace uses fixture data only.
 
 ## Setup
 
@@ -60,10 +64,12 @@ OpenAI API keys and Supabase service role keys must stay server-only.
 
 ## Project Boundaries
 
-Phase 1 only creates the scaffold. Future work should keep business logic out
-of `src/app` route files where possible and use:
+Phase 2 only creates the front-end shell. Future work should keep business
+logic out of `src/app` route files where possible and use:
 
 - `src/features` for frontend product areas.
+- `src/lib/fixtures` for mock data that must not become the production data
+  source.
 - `src/server` for server-only orchestration, auth, AI, data, export, quota,
   and version logic.
 - `src/schemas` for runtime validation.

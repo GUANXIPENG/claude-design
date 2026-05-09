@@ -1004,3 +1004,20 @@ Phase 4 基础层采用：
 - 接入 Sandpack，把通过 schema 校验的文件树载入受控预览。
 - 将版本快照、生成记录和导出记录写入 Supabase，并补 migration/RLS。
 - 实现导出 zip / 静态包下载。
+
+### 9.2 Phase 4 后续落地顺序
+
+Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、版本持久化和导出打包不能并行混做，否则会让安全校验、权限校验和用户可见状态难以验收。
+
+| 顺序 | 架构落点 | 依赖 | 必须保持的边界 |
+|---|---|---|---|
+| 1. Supabase migration/RLS | `src/server/db`、migration 文件、Supabase policy 文档 | Phase 3 Drizzle schema | 数据库层 RLS 与服务端权限校验同时存在；不信任前端 userId |
+| 2. 版本/生成记录持久化 | `src/server/versions`、`src/server/generation`、repositories | migration/RLS | 生成失败不能覆盖当前版本；rollback 必须创建新版本记录 |
+| 3. OpenAI Responses provider | `src/server/ai` | Phase 4 schema 和 prompt | OpenAI key server-only；provider 错误脱敏；输出必须过 Zod 和路径 allowlist |
+| 4. 生成 route / Server Action | `src/app` route handlers 或 server actions、`src/server/generation` | 持久化服务、provider | 未登录不可生成；空输入不可生成；前端不直接调用 provider |
+| 5. Sandpack runtime | `src/features/preview`、`src/features/workspace` | schema 校验后的文件树 | Sandpack 只运行受控前端文件；不执行真实后端；不允许任意依赖安装 |
+| 6. 版本历史 / rollback UI | `src/features/versions`、`src/server/versions` | 版本持久化 | 回退前二次确认；回退失败不破坏当前版本 |
+| 7. 导出 zip / 静态包 | `src/server/export`、route handler | export manifest、版本持久化 | 导出重新校验路径；导出绑定项目、版本和权限；导出说明原型边界 |
+| 8. API/E2E 测试加固 | `tests`、Playwright/Vitest 配置 | 上述闭环 | AI 使用 mock 或稳定 fixture；覆盖鉴权、非法路径、失败恢复和导出前校验 |
+
+该顺序不改变 MVP 范围；它只是把 ADR-0003 后续动作拆成可验证的工程步骤。

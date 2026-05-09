@@ -7,10 +7,14 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs"
+    "test": "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs && node tests/phase3-persistence-auth.test.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.105.3",
+    "drizzle-orm": "^0.45.2",
     "next": "^16.2.5",
+    "postgres": "^3.4.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.24.0"
@@ -22,6 +26,7 @@
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "autoprefixer": "^10.4.0",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^8.57.0",
     "postcss": "^8.5.0",
     "tailwindcss": "^3.4.0",

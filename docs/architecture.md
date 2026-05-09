@@ -1005,6 +1005,60 @@ Phase 4 基础层采用：
 - 将版本快照、生成记录和导出记录写入 Supabase，并补 migration/RLS。
 - 实现导出 zip / 静态包下载。
 
+### ADR-0004: 补齐 Supabase migration 与 RLS policy 基础层
+
+#### 状态
+
+Accepted
+
+#### 背景
+
+Issue #6 对应 Phase 4 后续落地顺序的第 1 步：在真实 OpenAI、Sandpack runtime、版本持久化和导出打包之前，先把 Supabase PostgreSQL schema migration 与 RLS policy 文件落到仓库中。Phase 3 已有 Drizzle schema 和服务端项目归属边界，但缺少可执行 SQL 与数据库层隔离策略，无法支撑后续真实持久化和上线前权限验收。
+
+#### 决策
+
+本阶段新增：
+
+- `drizzle/0001_initial_schema.sql`：定义 `generation_mode`、`generation_status`、`quota_operation` enum，并创建 `user_profiles`、`projects`、`pages`、`project_versions`、`conversation_messages`、`generation_requests`、`generation_results`、`export_records`、`quotas` 表、外键和常用索引。
+- `supabase/policies/0001_project_rls.sql`：为业务表启用 RLS，并按 `auth.uid()`、`projects.owner_id`、`generation_requests.requested_by_id`、`quotas.user_id` 等归属条件限制读取和写入。
+- `tests/phase4-supabase-migration-rls.test.mjs`：用脚本级检查锁定 migration/RLS 文件、关键 policy 名称、owner/user 隔离条件和文档同步标记。
+
+服务端仍必须继续执行权限校验；RLS 是数据库层兜底，不替代 `src/server` 中的 owner 校验。Supabase service role key 仍只允许在服务端受控使用，不能进入浏览器 bundle。
+
+#### 备选方案
+
+- 只依赖 Drizzle schema 自动推导迁移：无法在当前仓库中明确审查 RLS policy 和安全边界。
+- 等真实 Supabase 项目准备好后再写 SQL：会阻塞后续版本、生成记录和导出记录持久化开发。
+- 只靠服务端 owner 校验不配置 RLS：数据库层缺少最后一道隔离边界，不符合架构和 AGENTS 安全要求。
+
+#### 取舍原因
+
+先提交本地 migration/RLS 文件可以让后续持久化服务在稳定表结构上开发，也让权限策略进入代码审查和测试范围。真实 Supabase 远程执行仍需要单独环境变量和项目权限，因此本阶段只完成仓库内可验证基础层，不声称已经完成远程数据库部署或跨用户真实查询验证。
+
+#### 影响范围
+
+- `drizzle/0001_initial_schema.sql`
+- `supabase/policies/0001_project_rls.sql`
+- `tests/phase4-supabase-migration-rls.test.mjs`
+- `docs/PROJECT_STATUS.md`
+- `package.json`
+
+#### 风险
+
+- 当前 SQL 尚未在真实 Supabase 项目执行，可能仍需要根据远程数据库状态调整 migration 顺序。
+- RLS policy 文件已覆盖当前 MVP 表，但后续新增分享、团队、公开模板或协作时必须重新设计权限模型。
+- 当前检查能验证 SQL 文件包含关键策略，不能替代真实多用户集成测试。
+
+#### 是否影响 MVP 范围
+
+否。该决策只补齐既定 MVP 的数据库和权限基础，不新增团队协作、公开分享或企业权限能力。
+
+#### 后续动作
+
+- 在真实 Supabase 项目执行 `drizzle/0001_initial_schema.sql` 和 `supabase/policies/0001_project_rls.sql`。
+- 用不同用户验证 projects/pages/versions/messages/generation/export/quota 的跨用户隔离。
+- 进入下一个 Issue：将版本快照、generation request/result 和 conversation message 写入 Supabase/Drizzle 服务层。
+
 ### 9.2 Phase 4 后续落地顺序
 
 Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、版本持久化和导出打包不能并行混做，否则会让安全校验、权限校验和用户可见状态难以验收。

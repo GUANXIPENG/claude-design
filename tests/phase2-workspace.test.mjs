@@ -33,8 +33,8 @@ assert.match(home, /href="\/workspace"/);
 
 const projectList = readText("src/features/projects/components/ProjectListPage.tsx");
 assert.match(projectList, /ProjectListPage/);
-assert.match(projectList, /fixtureProjects/);
-assert.match(projectList, /Mock data/);
+assert.match(projectList, /projects/);
+assert.match(projectList, /Private projects/);
 assert.match(projectList, /Open workspace/);
 
 const workspace = readText("src/features/workspace/components/WorkspacePage.tsx");

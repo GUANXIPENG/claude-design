@@ -50,6 +50,7 @@ const migration = readText(migrationPath);
 
 const rls = readText(rlsPath);
 [
+  "ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY",
   "ALTER TABLE projects ENABLE ROW LEVEL SECURITY",
   "ALTER TABLE pages ENABLE ROW LEVEL SECURITY",
   "ALTER TABLE project_versions ENABLE ROW LEVEL SECURITY",
@@ -67,6 +68,7 @@ const rls = readText(rlsPath);
 ].forEach((marker) => assert.match(rls, new RegExp(marker)));
 
 [
+  "user_profiles_self_select",
   "projects_owner_select",
   "pages_project_owner_select",
   "project_versions_project_owner_select",

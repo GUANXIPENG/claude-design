@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前仍未完成真实 Supabase migration/RLS、真实 OpenAI provider、真实 Sandpack runtime、导出 zip 下载、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件；仍未完成真实 Supabase 远程执行与跨用户 RLS 验证、真实 OpenAI provider、真实 Sandpack runtime、导出 zip 下载、Playwright E2E 和生产部署配置。
 
 ### 1.2 架构目标
 
@@ -838,7 +838,7 @@ MVP 基线采用：
 |---|---|---|
 | PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而架构文档需要锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
 | Phase 4 基础层不等于完整 Phase 4 闭环 | 当前已有 schema、mock provider、版本和导出 manifest 服务边界，但真实 OpenAI、Sandpack runtime、数据库写入和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“基础边界已实现”和“真实闭环未实现” |
-| Supabase schema 与真实数据库仍未对齐 | Drizzle schema 已存在，但 migration/RLS 尚未落地 | 后续必须创建 migration、执行数据库变更并配置 RLS |
+| Supabase schema 与真实数据库仍未对齐 | Drizzle schema 和本地 migration/RLS 文件已存在，但尚未在真实 Supabase 项目执行和验证 | 后续必须执行数据库变更、应用 RLS policy，并验证跨用户隔离 |
 
 ### 6.2 待确认问题
 
@@ -928,7 +928,7 @@ Phase 3 基础层采用：
 #### 风险
 
 - 本地未配置 Supabase 环境变量时无法真实登录，页面会显示配置缺失提示。
-- 目前尚未创建真实数据库 migration 文件或 RLS policy；部署前仍需在 Supabase 中执行迁移并配置 RLS。
+- ADR-0002 完成时尚未创建真实数据库 migration 文件或 RLS policy；当前已由 ADR-0004 补齐本地 SQL/RLS 文件，部署前仍需在 Supabase 中执行迁移并验证 RLS。
 - 项目列表已经转为服务端持久化读取，未配置数据库时会显示空状态，不再显示 fixture 项目卡片。
 
 #### 是否影响 MVP 范围
@@ -1002,7 +1002,7 @@ Phase 4 基础层采用：
 
 - 用真实 OpenAI Responses API provider 替换 mock provider，并保留同一 `AiProvider` 接口。
 - 接入 Sandpack，把通过 schema 校验的文件树载入受控预览。
-- 将版本快照、生成记录和导出记录写入 Supabase，并补 migration/RLS。
+- 将版本快照、生成记录和导出记录写入 Supabase，并基于 ADR-0004 的 migration/RLS 文件执行真实数据库验证。
 - 实现导出 zip / 静态包下载。
 
 ### ADR-0004: 补齐 Supabase migration 与 RLS policy 基础层

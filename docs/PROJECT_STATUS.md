@@ -73,8 +73,8 @@
 | Sandpack 预览 | Phase 2 静态预览和代码视图已实现；真实 Sandpack 沙盒未接入 | MVP 最终需要受控运行生成文件 | 是 | Phase 4 |
 | 真实 AI 生成逻辑 | Phase 4 已实现 prompt、Zod generation schema、mock provider 和服务端编排；真实 OpenAI Responses API 网络调用未实现 | 产品核心能力依赖真实模型调用 | 是 | Phase 4 后续 |
 | Supabase Auth | 服务端会话边界、登录/退出 action、受保护路由已建立；真实 Supabase 项目配置后可验证完整登录闭环 | 项目归属和私有项目依赖账号 | 否，基础层已解除；真实环境配置和 RLS 仍是上线前阻塞 | Phase 3 已完成基础层，后续补配置验证 |
-| 数据库 schema | UserProfile、Project、Page、ProjectVersion、ConversationMessage、GenerationRequest、GenerationResult、ExportRecord、Quota 最小 schema 已建立 | 项目持久化、版本和额度记录可继续落地 | 否，schema 基础层已解除；migration/RLS 仍阻塞生产落地 | Phase 3 已完成基础层，后续补 migration/RLS |
-| Drizzle ORM | 已安装 Drizzle 依赖、配置 `drizzle.config.ts`，并新增 server db client | 架构基线要求类型化数据访问 | 否，基础层已解除；真实迁移执行仍未完成 | Phase 3 已完成基础层，后续补 migration |
+| 数据库 schema | UserProfile、Project、Page、ProjectVersion、ConversationMessage、GenerationRequest、GenerationResult、ExportRecord、Quota 最小 schema 和本地 migration/RLS SQL 已建立 | 项目持久化、版本和额度记录可继续落地 | 否，schema 和本地 SQL 基础层已解除；真实 Supabase 执行与跨用户 RLS 验证仍阻塞生产落地 | Phase 3/Issue #6 已完成基础层，后续执行真实 migration/RLS 验证 |
+| Drizzle ORM | 已安装 Drizzle 依赖、配置 `drizzle.config.ts`，并新增 server db client 与本地初始 migration SQL | 架构基线要求类型化数据访问 | 否，基础层已解除；真实 Supabase 迁移执行仍未完成 | Phase 3/Issue #6 已完成基础层，后续执行真实 migration |
 | 多页面项目生成 | Phase 4 mock provider 可返回多页面项目结构；真实 OpenAI 生成和数据库保存未实现 | MVP 不应只生成单页面 | 是 | Phase 4 后续 |
 | 项目级版本快照 | Phase 4 已实现快照和 rollback 数据边界；历史列表 UI、数据库写入和真实回退闭环未实现 | 用户无法在真实项目中撤回不满意结果 | 是 | Phase 4 后续 |
 | 点击选择后局部修改 | 工作台已展示 Selection context 基础状态；真实预览点击识别、选区高亮和局部修改闭环未实现 | PRD 核心差异化能力之一 | 是 | Phase 4 后续 |
@@ -90,7 +90,7 @@
 | 问题描述 | 影响范围 | 可能原因 | 建议解决方式 | 优先级 |
 |---|---|---|---|---|
 | Codex 环境中 `npm run dev` 返回 `spawn EPERM` | 无法在当前沙箱内验证 Next dev server | Next dev 内部使用 `child_process.fork`，当前环境限制 spawn | 在普通本机终端复验 `npm run dev`；当前以 build + `next start` HTTP 验收替代 | P1 |
-| 真实业务页面持久化闭环未完成 | 项目列表已接服务端持久化读取边界，但还没有真实项目创建 UI、migration/RLS 和远程数据库验证 | Phase 3 只完成基础层，尚未完成端到端项目创建 | 下一步补 Supabase migration/RLS 和最小项目创建流程 | P0 |
+| 真实业务页面持久化闭环未完成 | 项目列表已接服务端持久化读取边界，本地 migration/RLS 文件已补齐，但还没有真实项目创建 UI、真实 Supabase 执行和远程数据库验证 | Phase 3/Issue #6 只完成基础层，尚未完成端到端项目创建 | 下一步执行并验证 Supabase migration/RLS，并补最小项目创建流程 | P0 |
 | 真实 AI/Sandpack/导出未完整接入 | MVP 核心生成、预览运行和交付能力仍不可完整使用 | Phase 4 已完成基础边界；真实 OpenAI、Sandpack runtime、zip 导出和持久化闭环尚未接入 | 按后续 Issue 接入真实 provider、受控预览、版本/导出持久化和下载能力 | P0 |
 
 ### 4.2 高优先级问题

@@ -7,7 +7,7 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs && node tests/phase3-persistence-auth.test.mjs"
+    "test": "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs && node tests/phase3-persistence-auth.test.mjs && node tests/phase4-generation-preview-export.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

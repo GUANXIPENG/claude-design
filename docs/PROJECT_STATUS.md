@@ -383,7 +383,7 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 
 ## 8. 当前代码质量评价
 
-当前已有 Phase 1 scaffold、Phase 2 fixture/mock 前端代码、Phase 3 认证/持久化基础层，以及 Phase 4 生成输出校验、mock provider、版本快照和导出 manifest 服务边界。以下评价聚焦当前工程状态：前端壳已可运行，服务端 Auth/DB/schema/AI 输出校验边界已建立，但真实 OpenAI、Sandpack runtime、导出 zip、版本回退 UI、migration/RLS 和生产部署配置仍未实现。
+当前已有 Phase 1 scaffold、Phase 2 fixture/mock 前端代码、Phase 3 认证/持久化基础层，以及 Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界和本地 Supabase migration/RLS 文件。以下评价聚焦当前工程状态：前端壳已可运行，服务端 Auth/DB/schema/AI 输出校验边界已建立，本地 migration/RLS SQL 已补齐；真实 OpenAI、Sandpack runtime、导出 zip、版本回退 UI、真实 Supabase 执行/跨用户 RLS 验证和生产部署配置仍未实现。
 
 | 评价维度 | 当前评价 | 真实问题 |
 |---|---|---|
@@ -402,7 +402,7 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 - 文档质量较完整，已经同步 Phase 4 基础层，并继续指导后续真实 OpenAI、Sandpack runtime、Supabase migration/RLS 与导出打包。
 - 工程已有可运行 scaffold、Phase 2 前端壳、Phase 3 认证/持久化基础层和 Phase 4 生成/版本/导出服务边界。
 - 不应把 Phase 2 fixture 或 Phase 4 mock provider 误认为真实 AI、Sandpack、导出下载或版本回退闭环；项目列表已不再使用 fixture 作为生产数据源。
-- 下一步最重要的是接入真实 OpenAI provider、Sandpack 受控预览、Supabase migration/RLS 和版本/导出持久化。
+- 下一步最重要的是执行并验证真实 Supabase migration/RLS、接入版本/导出持久化、真实 OpenAI provider 和 Sandpack 受控预览。
 
 ## 9. 持续更新规则
 
@@ -506,7 +506,7 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 - 未接入真实 OpenAI 生成、AI structured output、prompt 模板或 provider adapter。
 - 未接入 Sandpack 运行时预览。
 - 未实现导出打包、导出下载、版本回退 UI 或真实版本历史页面。
-- 未创建真实 Supabase migration 文件，未在远程数据库执行 schema，未配置 RLS policy。
+- 当时未创建真实 Supabase migration 文件，未在远程数据库执行 schema，未配置 RLS policy；当前本地 SQL/RLS 文件已在 Issue #6 补齐，真实远程执行仍未完成。
 - 未实现真实项目创建 UI；项目列表现在读取服务端持久化边界，未配置数据库或未创建项目时显示空状态。
 - 未接入真实订阅、支付或额度扣减策略；当前只建立操作次数记录边界。
 
@@ -550,7 +550,7 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 - 未接入真实 Sandpack runtime 或错误 overlay；工作台预览仍使用 fixture。
 - 未把版本快照、生成记录或导出记录写入真实数据库。
 - 未生成 zip 下载或静态包文件；当前导出服务只准备安全 manifest。
-- 未创建 Supabase migration 或 RLS policy。
+- 当时未创建 Supabase migration 或 RLS policy；当前本地 SQL/RLS 文件已在 Issue #6 补齐，真实远程执行仍未完成。
 
 当前仍存在的环境限制：
 
@@ -561,7 +561,7 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 
 - 补 Issue：接入真实 OpenAI Responses API provider，并保留当前 `AiProvider` 接口和 schema 校验。
 - 补 Issue：接入 Sandpack，把通过校验的文件树载入受控预览。
-- 补 Issue：将版本快照、生成记录、导出记录写入 Supabase，并补 migration/RLS。
+- 补 Issue：将版本快照、生成记录、导出记录写入 Supabase，并基于 Issue #6 的 migration/RLS 文件执行真实数据库验证。
 - 补 Issue：实现导出 zip / 静态包下载。
 
 ## 14. 2026-05-09 Phase 4 后续路线拆分

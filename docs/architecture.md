@@ -937,8 +937,8 @@ Phase 3 基础层采用：
 
 #### 后续动作
 
-- 创建并验证 Drizzle migration。
-- 配置 Supabase RLS，确保项目、页面、版本、对话、导出和额度记录按用户隔离。
+- 本地 Drizzle migration SQL 已由 ADR-0004 补齐；后续需要在真实 Supabase 项目执行并验证。
+- 本地 Supabase RLS policy SQL 已由 ADR-0004 补齐；后续需要在真实 Supabase 项目应用并验证项目、页面、版本、对话、导出和额度记录按用户隔离。
 - 在 Phase 4 接入真实 AI 生成前，把生成结果 schema、路径安全和版本快照写入同一服务端边界。
 
 ## 9. Phase 4 实施记录

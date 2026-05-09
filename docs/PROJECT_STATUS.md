@@ -4,7 +4,7 @@
 
 ## 1. 当前项目阶段
 
-当前项目处于：**Phase 4 生成、版本与导出基础层已完成，等待真实 OpenAI、Sandpack runtime、Supabase migration/RLS 和导出打包落地**。
+当前项目处于：**Phase 4 生成、版本与导出基础层已完成，Supabase migration/RLS 本地文件已补齐，等待真实 Supabase 执行验证、真实 OpenAI、Sandpack runtime 和导出打包落地**。
 
 理由：
 
@@ -14,15 +14,16 @@
 - 已完成 `npm install`、`npm run test`、`npm run typecheck`、`npm run lint`、`npm run build` 和 production server HTTP 验收。
 - 当前已实现 fixture/mock 驱动的前端工作台闭环，并新增 Supabase Auth 服务端边界、Drizzle 最小 schema、受保护项目/工作台路由、项目归属服务边界和基础额度记录 schema。
 - 当前已新增 Phase 4 的生成输出 schema、路径安全校验、mock AI provider、生成/迭代编排、版本快照/回退数据边界、导出 manifest 边界和工作台 Phase 4 状态入口。
-- 当前仍未实现真实 OpenAI 网络调用、真实 Sandpack runtime、导出 zip 下载、版本记录数据库写入、真实数据库 migration/RLS 验证和生产部署配置。
+- 当前已新增 Supabase 初始 schema migration SQL 和项目归属 RLS policy SQL。
+- 当前仍未实现真实 OpenAI 网络调用、真实 Sandpack runtime、导出 zip 下载、版本记录数据库写入、真实数据库 migration/RLS 远程执行验证和生产部署配置。
 
-因此，当前重点应从 Phase 4 基础边界转向真实 OpenAI provider、Sandpack 受控预览、Supabase migration/RLS、版本/导出持久化和最终导出打包。
+因此，当前重点应从 Phase 4 基础边界转向真实 Supabase migration/RLS 执行验证、版本/导出持久化、真实 OpenAI provider、Sandpack 受控预览和最终导出打包。
 
 ## 2. 当前已经完成的内容
 
 | 模块 | 当前状态 | 相关文件 | 备注 |
 |---|---|---|---|
-| 项目初始化 | Git 仓库已存在，当前开发分支为 `docs-issue-5-phase-4-roadmap`，远程 `origin` 已配置 | `.git/` | Issue #5 用于细分 Phase 4 后续路线；历史 Issue #2/#3/#4 已完成 |
+| 项目初始化 | Git 仓库已存在，当前开发分支为 `feat-issue-6-supabase-migration-rls`，远程 `origin` 已配置 | `.git/` | Issue #6 用于补 Supabase migration/RLS；历史 Issue #2/#3/#4/#5 已完成 |
 | 需求文档 | 已完成第一版产品需求梳理 | `docs/requirements.md` | 覆盖产品定位、MVP/P1/P2、功能需求、非功能需求、导出、多页面、对话修改、局部修改、版本、账号、额度、风险 |
 | PRD | 已完成结构化 PRD | `docs/PRD.md` | 覆盖用户角色、用户流程、页面清单、功能列表、Given/When/Then 验收标准、状态设计、视觉风格、信息架构、MVP 边界 |
 | 架构草案 | 已完成技术栈锁定与架构基线 | `docs/architecture.md` | 锁定 Next.js、TypeScript、Tailwind、Supabase、Drizzle、OpenAI Responses API、Zod、Sandpack、Vercel、Vitest、Playwright 等方向 |
@@ -80,7 +81,7 @@
 | 导出功能 | Phase 4 已建立导出 manifest 服务边界；静态文件 zip、可编辑项目结构下载和导出记录持久化仍未实现 | 用户还无法真正下载生成结果 | 是 | Phase 4 后续 |
 | 额度限制 | 已建立 quota schema 和 `recordQuotaUsage` 基础记录服务；额度提示、限制和扣减策略未实现 | 成本控制和未来商业化需要基础记录 | 否，基础记录边界已建立；真实限制逻辑仍需后续补齐 | Phase 3 已完成基础记录，Phase 4/5 补限制与 UI |
 | 部署配置 | Vercel 配置、环境变量、构建脚本缺失 | 无法部署预览或生产环境 | 是，部署前阻塞 | Phase 5 |
-| 测试覆盖 | Phase 1/2/3/4 脚本检查已建立；Vitest、schema fixtures、API 测试、Playwright 未建立 | 目前能验证 scaffold、前端壳、Auth/DB 基础层和 Phase 4 服务边界；仍无法验证真实 API、RLS 和 E2E | 是，至少最小业务/安全测试阻塞可发布 MVP | Phase 5 |
+| 测试覆盖 | Phase 1/2/3/4 脚本检查已建立；Supabase migration/RLS 文件检查已补；Vitest、schema fixtures、API 测试、Playwright 未建立 | 目前能验证 scaffold、前端壳、Auth/DB 基础层、Phase 4 服务边界和 RLS SQL 存在性；仍无法验证真实远程 RLS 行为、API 和 E2E | 是，至少最小业务/安全测试阻塞可发布 MVP | Phase 5 |
 
 ## 4. 已知问题和阻塞点
 
@@ -98,7 +99,7 @@
 |---|---|---|---|---|
 | AI 生成逻辑未完整接入 | 产品核心能力仍不可真实调用 | Phase 4 已有 mock provider、schema 和服务编排；真实 OpenAI provider 尚未接入 | 用真实 OpenAI Responses API provider 替换 mock provider，并保留 schema/path 校验 | P1 |
 | Supabase Auth 真实环境未验证 | 服务端边界已建立，但没有真实 Supabase 项目配置时无法完成登录闭环 | 缺少真实环境变量和 Supabase 项目 | 配置 Supabase Auth 后复验 magic link 登录、退出和受保护路由 | P1 |
-| 数据库 migration / RLS 未建立 | schema 已在代码中定义，但还没有迁移文件、远程执行和 RLS policy | Phase 3 先建立 TypeScript schema | 创建 Drizzle migration，在 Supabase 执行并配置 RLS | P1 |
+| 数据库 migration / RLS 未远程验证 | 本地 migration SQL 和 RLS policy SQL 已建立，但尚未在真实 Supabase 项目执行和验证 | 当前环境没有真实 Supabase 项目连接 | 在 Supabase 执行 migration/RLS，并验证跨用户隔离 | P1 |
 | Sandpack 预览未接入 | 当前只能静态预览 fixture，无法运行生成项目文件 | Phase 2 只实现前端壳和代码视图 | Phase 4 接 Sandpack 和 AI 结果 | P1 |
 | 版本快照和回退未完整实现 | 修改风险高，用户还无法在真实项目中撤销 | Phase 4 已有项目级快照和 rollback 数据边界；数据库写入和 UI 历史弹窗尚未接入 | 将版本服务接入 Supabase，并补历史版本 UI 和回退确认 | P1 |
 | 导出功能未完整实现 | 用户无法保存或交付生成结果 | Phase 4 已有服务端导出 manifest；zip/下载和导出记录持久化尚未接入 | 基于当前 manifest 实现静态包/可编辑项目结构下载 | P1 |
@@ -585,3 +586,25 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 - 创建 Issue：`feat: add supabase migration and rls policies`。
 - 基于该 Issue 新建独立分支。
 - 先补本地 migration/RLS 文件与验证脚本，再进入真实 provider 或 Sandpack 开发。
+
+## 15. 2026-05-09 Supabase migration/RLS 开发更新
+
+本次完成 Issue #6：`feat: add supabase migration and rls policies`。
+
+已完成内容：
+
+- 新增 `drizzle/0001_initial_schema.sql`，覆盖当前 Drizzle schema 对应的 enum、table、foreign key 和 index。
+- 新增 `supabase/policies/0001_project_rls.sql`，为 `user_profiles`、`projects`、`pages`、`project_versions`、`conversation_messages`、`generation_requests`、`generation_results`、`export_records`、`quotas` 启用 RLS。
+- RLS policy 按 `auth.uid()` 和项目归属限制私有项目、页面、版本、对话、生成记录、导出记录和额度记录访问。
+- 新增 `tests/phase4-supabase-migration-rls.test.mjs`，检查 migration/RLS 文件、关键表、policy 和文档同步标记。
+
+本次未实现：
+
+- 未连接真实 Supabase 项目执行 SQL。
+- 未验证真实跨用户 RLS 行为。
+- 未改动工作台 UI、OpenAI provider、Sandpack runtime 或导出下载。
+
+下一步建议：
+
+- 在真实 Supabase 项目执行 `drizzle/0001_initial_schema.sql` 和 `supabase/policies/0001_project_rls.sql`。
+- 补 Issue：`feat: persist project versions and generation records`，把 Phase 4 版本快照、生成记录和导出记录写入数据库服务层。

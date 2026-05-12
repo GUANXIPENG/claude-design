@@ -22,7 +22,7 @@
 
 | 模块 | 当前状态 | 相关文件 | 备注 |
 |---|---|---|---|
-| 项目初始化 | Git 仓库已存在，当前开发分支为 `feat-issue-4-phase-4-generation-preview-export`，远程 `origin` 已配置 | `.git/` | Issue #4 正在本地开发；历史 Issue #2/#3 已完成 |
+| 项目初始化 | Git 仓库已存在，当前开发分支为 `docs-issue-5-phase-4-roadmap`，远程 `origin` 已配置 | `.git/` | Issue #5 用于细分 Phase 4 后续路线；历史 Issue #2/#3/#4 已完成 |
 | 需求文档 | 已完成第一版产品需求梳理 | `docs/requirements.md` | 覆盖产品定位、MVP/P1/P2、功能需求、非功能需求、导出、多页面、对话修改、局部修改、版本、账号、额度、风险 |
 | PRD | 已完成结构化 PRD | `docs/PRD.md` | 覆盖用户角色、用户流程、页面清单、功能列表、Given/When/Then 验收标准、状态设计、视觉风格、信息架构、MVP 边界 |
 | 架构草案 | 已完成技术栈锁定与架构基线 | `docs/architecture.md` | 锁定 Next.js、TypeScript、Tailwind、Supabase、Drizzle、OpenAI Responses API、Zod、Sandpack、Vercel、Vitest、Playwright 等方向 |
@@ -249,6 +249,29 @@
 - AI 输出不合法时优先 repair 或失败回滚，不能覆盖当前可用版本。
 - 禁止生成 `.env`、服务端密钥、shell 脚本和不受控依赖安装指令。
 - MVP 只支持点击元素 / 区块选择，不做任意框选。
+
+### Phase 4 后续细分路线
+
+Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等于完整产品闭环。后续必须按以下顺序拆分 Issue，避免在真实模型、预览、数据库和导出之间互相污染边界。
+
+| 顺序 | 建议 Issue 标题 | 目标 | 非目标 | 验收标准 | 必跑检查 |
+|---|---|---|---|---|---|
+| 1 | `feat: add supabase migration and rls policies` | 生成并验证数据库 migration 与 RLS policy，覆盖 projects、pages、versions、messages、generation、export、quota 表 | 不接真实 OpenAI；不改工作台 UI；不做团队权限 | migration 文件存在；RLS policy 明确按 `owner_id` / 用户归属隔离；文档说明本地和远程执行步骤 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint` |
+| 2 | `feat: persist project versions and generation records` | 将 Phase 4 的版本快照、generation request/result、conversation message 写入 Supabase/Drizzle 服务层 | 不接 Sandpack；不做 zip 导出；不做复杂版本 diff | generate/iterate 成功后能形成数据库版本记录；失败不覆盖当前版本；服务端不信任前端 userId | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、必要 schema/service 测试 |
+| 3 | `feat: connect openai responses provider` | 用真实 OpenAI Responses API provider 替换 mock provider，并保留 `AiProvider` 接口、Zod 校验和路径 allowlist | 不把 OpenAI SDK 放进前端；不放宽文件 allowlist；不实现 streaming UI | 服务端读取 `OPENAI_API_KEY`；provider 原始错误脱敏；AI 输出必须通过 schema 才能返回 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、`npm.cmd run build` |
+| 4 | `feat: expose generation route and workspace submit flow` | 新增服务端生成入口，把工作台提交从 fixture 状态接到服务端 generate/iterate flow | 不接 Sandpack runtime；不做真实下载；不做任意框选 | 空输入不能触发请求；未登录不能生成；生成中/失败/成功状态清晰；失败保留旧版本 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、`npm.cmd run build` |
+| 5 | `feat: add sandpack preview runtime` | 将通过 schema 校验的受控文件树载入 Sandpack 预览，并显示运行错误 | 不允许任意依赖安装；不允许真实后端执行；不开放不受控网络访问 | Sandpack 只运行 allowlist 文件；运行错误可见；代码视图与当前版本一致 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、`npm.cmd run build`，必要时 Playwright 截图检查 |
+| 6 | `feat: implement version history and rollback ui` | 增加版本历史入口、历史版本预览、二次确认和 rollback 创建新当前版本 | 不做版本分支；不做视觉 diff；不做局部页面回退 | 用户能看到版本摘要；回退前确认；回退后生成新版本记录；失败不破坏当前版本 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、`npm.cmd run build` |
+| 7 | `feat: implement export zip download` | 基于 export manifest 生成静态文件包和可继续编辑项目结构下载 | 不生成真实后端业务代码；不导出密钥/敏感配置；不做后台队列 | 导出绑定项目、版本和权限；路径重新校验；导出说明标明原型边界 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、`npm.cmd run build` |
+| 8 | `test: add phase 4 api and e2e coverage` | 用 Vitest/Playwright 补生成、修改、回退、导出关键路径覆盖 | 不新增产品功能 | 覆盖鉴权、空输入、非法 AI 路径、版本回退、导出前校验 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、`npm.cmd run build`、Playwright |
+
+执行规则：
+
+- 每个 Issue 必须创建独立分支。
+- 每个 Issue 开发前必须确认对应 PRD 验收标准。
+- 每个 Issue 完成后必须更新 `docs/PROJECT_STATUS.md`；如果改变架构或边界，必须更新 `docs/architecture.md` 并补 ADR。
+- 每个 Issue 至少运行 `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`；涉及构建或 UI 的 Issue 还必须运行 `npm.cmd run build`。
+- 涉及真实 OpenAI、Sandpack、权限、RLS、版本、导出的 Issue 完成后必须启动子 agent 做独立验收；若平台限制不能启动，主 agent 必须按同格式手动验收。
 
 ### Phase 5：部署与测试加固
 
@@ -539,3 +562,26 @@
 - 补 Issue：接入 Sandpack，把通过校验的文件树载入受控预览。
 - 补 Issue：将版本快照、生成记录、导出记录写入 Supabase，并补 migration/RLS。
 - 补 Issue：实现导出 zip / 静态包下载。
+
+## 14. 2026-05-09 Phase 4 后续路线拆分
+
+本次完成 Issue #5：`docs: split phase 4 follow-up development roadmap`。
+
+已完成内容：
+
+- 将 Phase 4 后续工作拆成 8 个顺序 Issue：Supabase migration/RLS、版本/生成记录持久化、真实 OpenAI provider、工作台生成入口、Sandpack runtime、版本历史/回退 UI、导出 zip 下载、API/E2E 测试加固。
+- 明确每个 Issue 的目标、非目标、验收标准和必跑检查。
+- 明确后续开发必须逐 Issue 独立分支、逐步提交、逐步更新文档。
+
+本次未实现：
+
+- 未接真实 OpenAI。
+- 未接 Sandpack runtime。
+- 未执行 Supabase migration/RLS。
+- 未实现数据库持久化、zip 导出或 E2E。
+
+下一步建议：
+
+- 创建 Issue：`feat: add supabase migration and rls policies`。
+- 基于该 Issue 新建独立分支。
+- 先补本地 migration/RLS 文件与验证脚本，再进入真实 provider 或 Sandpack 开发。

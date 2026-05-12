@@ -1,30 +1,32 @@
 # AI Design Workspace 技术栈锁定与架构草案
 
-最后更新：2026-05-08
+最后更新：2026-05-09
 
 ## 1. 文档定位与当前仓库状态
 
-本文档是当前 MVP 阶段的技术决策基线，用于指导后续实现“类似 Claude Design 的 AI 设计生成网站”。它不是永久架构，也不是最终工程实现说明。后续每次重要架构变化都必须在本文档的 ADR 记录中说明：为什么要改、改了什么、影响哪些模块、是否引入新风险、是否影响 MVP 范围。
+本文档是当前 MVP 阶段的技术决策基线，用于指导“类似 Claude Design 的 AI 设计生成网站”的持续实现。它不是永久架构，也不是最终工程实现说明。后续每次重要架构变化都必须在本文档的 ADR 记录中说明：为什么要改、改了什么、影响哪些模块、是否引入新风险、是否影响 MVP 范围。
 
-本次任务只写架构文档，不写业务代码，不创建源码目录，不修改配置、依赖或现有功能代码。
+当前仓库已经包含 Phase 1 scaffold、Phase 2 fixture/mock 前端工作台、Phase 3 Supabase Auth/Drizzle 基础层，以及 Phase 4 生成输出校验、mock provider、版本快照和导出 manifest 服务边界。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
 
 ### 1.1 已读取的仓库内容
 
-当前仓库中可用的产品文档：
+当前仓库中可用的产品与状态文档：
 
 - `docs/requirements.md`：产品需求文档。
 - `docs/PRD.md`：结构化 PRD。
+- `docs/PROJECT_STATUS.md`：阶段状态、已完成内容、阻塞点和下一步计划。
+- `docs/architecture.md`：本文档，记录技术栈基线与 ADR。
 
-当前仓库未发现：
+当前仓库已建立的工程基础：
 
 - `README.md`。
-- 源码目录。
-- `package.json` 或依赖锁文件。
-- 技术边界文档。
-- 现有数据库 migration。
-- 现有 API、页面、组件或服务端实现。
+- `package.json` 和 `package-lock.json`。
+- `src/app`、`src/features`、`src/server`、`src/schemas`、`src/prompts` 等源码目录。
+- Supabase Auth、Drizzle schema、项目/额度服务边界。
+- Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
+- Phase 1 到 Phase 4 的脚本级测试。
 
-因此，本架构文档不是对既有代码的总结，而是基于需求文档和 PRD 推导出的 MVP 技术栈与架构草案。
+当前仍未完成真实 Supabase migration/RLS、真实 OpenAI provider、真实 Sandpack runtime、导出 zip 下载、Playwright E2E 和生产部署配置。
 
 ### 1.2 架构目标
 
@@ -834,11 +836,9 @@ MVP 基线采用：
 
 | 问题 | 说明 | 推荐处理 |
 |---|---|---|
-| 仓库无源码 | 当前没有现有代码可验证技术栈是否已被使用 | 本文档作为初始架构基线，后续实现应按此创建 |
-| 仓库无 README | 没有项目启动、部署、边界说明 | 后续实现前补 README 或开发指南 |
-| 仓库无 package 配置 | 无法确认当前框架、语言、依赖 | 以本文档锁定的技术栈作为后续初始化依据 |
-| PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而本任务要求锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
-| 没有项目边界文档 | 用户提到项目边界文档，但仓库未发现 | 本文档先记录服务端/前端/预览/AI 边界 |
+| PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而架构文档需要锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
+| Phase 4 基础层不等于完整 Phase 4 闭环 | 当前已有 schema、mock provider、版本和导出 manifest 服务边界，但真实 OpenAI、Sandpack runtime、数据库写入和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“基础边界已实现”和“真实闭环未实现” |
+| Supabase schema 与真实数据库仍未对齐 | Drizzle schema 已存在，但 migration/RLS 尚未落地 | 后续必须创建 migration、执行数据库变更并配置 RLS |
 
 ### 6.2 待确认问题
 
@@ -940,3 +940,67 @@ Phase 3 基础层采用：
 - 创建并验证 Drizzle migration。
 - 配置 Supabase RLS，确保项目、页面、版本、对话、导出和额度记录按用户隔离。
 - 在 Phase 4 接入真实 AI 生成前，把生成结果 schema、路径安全和版本快照写入同一服务端边界。
+
+## 9. Phase 4 实施记录
+
+### ADR-0003: 建立生成输出校验、版本快照与导出服务基础层
+
+#### 状态
+
+Accepted
+
+#### 背景
+
+PROJECT_STATUS 明确 Phase 4 需要接入服务端 AI 生成、结构化输出校验、Sandpack 预览、项目级版本快照、回退和导出。真实 OpenAI 和真实 Sandpack 运行时接入前，必须先建立可测试的服务端安全边界，避免后续把不可信 AI 输出直接保存、预览或导出。
+
+#### 决策
+
+Phase 4 基础层采用：
+
+- `src/schemas/generation.ts` 定义生成结果、页面、文件、版本快照 schema。
+- `sanitizeGeneratedProject` 和 `validateGeneratedFilePath` 在服务端校验 AI 输出结构、路径 allowlist、重复文件和页面文件引用。
+- `src/server/ai/provider.ts` 定义 `AiProvider` adapter，并提供 `createMockAiProvider` 作为当前可测试 provider。
+- `src/prompts/generation.ts` 集中维护 Phase 4 生成系统提示，明确原型边界和禁止生成内容。
+- `src/server/generation/generationService.ts` 编排 generate / iterate，调用 provider、校验输出、记录额度并创建版本快照。
+- `src/server/versions/versionService.ts` 提供项目级版本快照和 rollback 记录边界；rollback 创建新的当前版本记录，不改写历史版本。
+- `src/server/export/exportService.ts` 基于版本快照准备安全导出 manifest，并记录 export 使用次数。
+- 工作台 UI 展示 Phase 4 的选区上下文、版本回退和导出状态，但仍明确预览内容来自 fixture，真实 Sandpack 运行时待接入。
+
+#### 备选方案
+
+- 直接接 OpenAI Responses API：会在 schema、路径安全和版本边界稳定前扩大风险。
+- 直接在前端组装生成结果：会违反 OpenAI key 和 AI 输出校验必须在服务端的边界。
+- 先做 Sandpack UI 再做服务端校验：会让不可信文件树更早进入预览路径。
+
+#### 取舍原因
+
+先做 mock provider + schema + 服务端编排可以用测试锁住安全边界，同时不阻塞后续替换为真实 OpenAI provider。版本和导出服务先返回可持久化的数据结构，避免当前阶段依赖未配置的 Supabase migration/RLS。
+
+#### 影响范围
+
+- `src/schemas/generation.ts`
+- `src/prompts/generation.ts`
+- `src/server/ai`
+- `src/server/generation`
+- `src/server/versions`
+- `src/server/export`
+- `src/features/workspace/components/WorkspacePage.tsx`
+- `tests/phase4-generation-preview-export.test.mjs`
+
+#### 风险
+
+- 当前 provider 是 mock provider，不能代表真实模型质量或 OpenAI Responses API 行为。
+- 当前导出服务只准备 manifest，还没有生成 zip 或下载文件。
+- 当前版本服务只建立快照/rollback 数据边界，还没有写入数据库。
+- 当前工作台仍使用 fixture 预览，真实 Sandpack 运行时和错误 overlay 待后续 Issue 接入。
+
+#### 是否影响 MVP 范围
+
+否。该决策实现 Phase 4 的基础服务边界，不新增 P1/P2 能力。
+
+#### 后续动作
+
+- 用真实 OpenAI Responses API provider 替换 mock provider，并保留同一 `AiProvider` 接口。
+- 接入 Sandpack，把通过 schema 校验的文件树载入受控预览。
+- 将版本快照、生成记录和导出记录写入 Supabase，并补 migration/RLS。
+- 实现导出 zip / 静态包下载。

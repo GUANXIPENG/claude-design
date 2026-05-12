@@ -46,7 +46,8 @@ assert.match(workspace, /setSelectedPageId/);
 assert.match(workspace, /Please describe what to generate or change/);
 assert.match(workspace, /Generating fixture preview/);
 assert.match(workspace, /Fixture update ready/);
-assert.match(workspace, /This is mock fixture output/);
+assert.match(workspace, /fixture content/);
+assert.match(workspace, /No AI request is being sent from the browser/);
 assert.match(workspace, /Code view/);
 
 console.log("Phase 2 workspace checks passed.");

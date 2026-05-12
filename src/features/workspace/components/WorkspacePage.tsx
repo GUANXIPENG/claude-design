@@ -5,6 +5,10 @@ import { useMemo, useState } from "react";
 import { primaryFixtureProject } from "@/lib/fixtures/workspace";
 
 type GenerationState = "idle" | "generating" | "ready";
+type SelectionState = {
+  label: string;
+  scope: string;
+};
 
 type WorkspacePageProps = {
   authUserEmail: string | null;
@@ -13,8 +17,14 @@ type WorkspacePageProps = {
 export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
   const [selectedPageId, setSelectedPageId] = useState(primaryFixtureProject.pages[0].id);
   const [draft, setDraft] = useState("");
-  const [message, setMessage] = useState("Describe a page or selected area to generate a fixture response.");
+  const [message, setMessage] = useState(
+    "Phase 4 generation foundation is ready for server-side schema validation, version snapshots, and export manifests. The visible preview still uses fixture content."
+  );
   const [generationState, setGenerationState] = useState<GenerationState>("idle");
+  const [selection, setSelection] = useState<SelectionState | null>({
+    label: "Home / Hero section",
+    scope: "Local edit requests default to this selected prototype section."
+  });
 
   const selectedPage = useMemo(
     () =>
@@ -35,11 +45,17 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
     }
 
     setGenerationState("generating");
-    setMessage("Generating fixture preview. No AI request is being sent.");
+    setMessage(
+      selection
+        ? `Generating fixture preview with selection context: ${selection.label}. No AI request is being sent from the browser.`
+        : "Generating fixture preview. No AI request is being sent from the browser."
+    );
 
     window.setTimeout(() => {
       setGenerationState("ready");
-      setMessage("Fixture update ready. This is mock fixture output for Phase 2 only.");
+      setMessage(
+        "Fixture update ready. Phase 4 server services validate generated files, create a project version snapshot, and prepare export manifests before real persistence is connected."
+      );
     }, 450);
   }
 
@@ -48,7 +64,7 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
       <header className="flex flex-col gap-3 border-b border-line bg-white px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">
-            Phase 3 authenticated workspace
+            Phase 4 generation foundation
           </p>
           <h1 className="mt-1 text-xl font-semibold">{primaryFixtureProject.name}</h1>
           <p className="mt-1 text-xs text-muted">
@@ -63,7 +79,7 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
             Version history
           </button>
           <button className="rounded-md bg-accent px-3 py-2 text-white" type="button">
-            Export mock
+            Export current version
           </button>
         </div>
       </header>
@@ -109,7 +125,7 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
           <div className="rounded-lg border border-line bg-white p-6 shadow-sm">
             <div className="rounded-md border border-line bg-canvas p-6">
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-accent">
-                Prototype only
+                Prototype boundary
               </p>
               <h3 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight">
                 {selectedPage.previewTitle}
@@ -140,9 +156,52 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
 
         <aside className="border-t border-line bg-white p-4 lg:border-l lg:border-t-0">
           <div className="mb-4 rounded-md border border-line bg-canvas p-3 text-xs leading-5 text-muted">
-            This workspace is now protected by Supabase Auth. Preview content still
-            uses fixture output until Phase 4 connects AI, Sandpack, export, quota
-            enforcement, and version rollback services.
+            This workspace is protected by Supabase Auth. Preview content still uses
+            fixture output, while Phase 4 server boundaries now cover AI output
+            schema validation, safe file paths, version snapshots, rollback records,
+            quota recording, and export manifests. Sandpack preview pending.
+          </div>
+
+          <div className="mb-4 rounded-lg border border-line p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-accent">
+                  Selection context
+                </p>
+                <p className="mt-2 text-sm font-medium">
+                  {selection?.label ?? "No selected area"}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted">
+                  {selection?.scope ??
+                    "Requests apply to the current page unless the text expands the scope."}
+                </p>
+              </div>
+              <button
+                className="rounded-md border border-line px-2 py-1 text-xs text-muted"
+                onClick={() =>
+                  setSelection((current) =>
+                    current
+                      ? null
+                      : {
+                          label: `${selectedPage.name} / Primary section`,
+                          scope: "Local edit requests default to this selected prototype section."
+                        }
+                  )
+                }
+                type="button"
+              >
+                {selection ? "Clear" : "Select"}
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-4 grid gap-2 text-xs text-muted">
+            <div className="rounded-md border border-line p-3">
+              Rollback creates a new current version instead of mutating history.
+            </div>
+            <div className="rounded-md border border-line p-3">
+              Export current version uses a server-side safe file manifest.
+            </div>
           </div>
 
           <div className="space-y-3">

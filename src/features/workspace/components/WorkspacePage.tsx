@@ -6,7 +6,11 @@ import { primaryFixtureProject } from "@/lib/fixtures/workspace";
 
 type GenerationState = "idle" | "generating" | "ready";
 
-export function WorkspacePage() {
+type WorkspacePageProps = {
+  authUserEmail: string | null;
+};
+
+export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
   const [selectedPageId, setSelectedPageId] = useState(primaryFixtureProject.pages[0].id);
   const [draft, setDraft] = useState("");
   const [message, setMessage] = useState("Describe a page or selected area to generate a fixture response.");
@@ -44,9 +48,12 @@ export function WorkspacePage() {
       <header className="flex flex-col gap-3 border-b border-line bg-white px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">
-            Phase 2 fixture workspace
+            Phase 3 authenticated workspace
           </p>
           <h1 className="mt-1 text-xl font-semibold">{primaryFixtureProject.name}</h1>
+          <p className="mt-1 text-xs text-muted">
+            Signed in as {authUserEmail ?? "authenticated user"}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="rounded-full border border-line px-3 py-1 text-muted">
@@ -133,8 +140,9 @@ export function WorkspacePage() {
 
         <aside className="border-t border-line bg-white p-4 lg:border-l lg:border-t-0">
           <div className="mb-4 rounded-md border border-line bg-canvas p-3 text-xs leading-5 text-muted">
-            This is mock fixture output. It is not connected to real AI, Supabase,
-            Sandpack, export, quota, or version rollback services.
+            This workspace is now protected by Supabase Auth. Preview content still
+            uses fixture output until Phase 4 connects AI, Sandpack, export, quota
+            enforcement, and version rollback services.
           </div>
 
           <div className="space-y-3">

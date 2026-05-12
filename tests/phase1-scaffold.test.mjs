@@ -21,7 +21,7 @@ assert.equal(pkg.scripts.typecheck, "tsc --noEmit");
 assert.equal(pkg.scripts.lint, "eslint src --ext .ts,.tsx");
 assert.equal(
   pkg.scripts.test,
-  "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs"
+  "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs && node tests/phase3-persistence-auth.test.mjs"
 );
 assert.ok(pkg.dependencies.next);
 assert.ok(pkg.dependencies.react);
@@ -50,11 +50,13 @@ const readme = readText("README.md");
 const env = readText(".env.example");
 
 assert.match(readme, /Phase 1/i);
+assert.match(readme, /Phase 3/i);
 assert.match(readme, /npm run dev/);
 assert.match(readme, /OPENAI_API_KEY/);
 assert.match(env, /NEXT_PUBLIC_SITE_URL=/);
 assert.match(env, /NEXT_PUBLIC_SUPABASE_URL=/);
 assert.match(env, /NEXT_PUBLIC_SUPABASE_ANON_KEY=/);
+assert.match(env, /SUPABASE_DATABASE_URL=/);
 assert.match(env, /SUPABASE_SERVICE_ROLE_KEY=/);
 assert.match(env, /OPENAI_API_KEY=/);
 

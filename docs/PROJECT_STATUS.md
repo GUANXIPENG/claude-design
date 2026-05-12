@@ -4,7 +4,7 @@
 
 ## 1. 当前项目阶段
 
-当前项目处于：**Phase 2 前端闭环已完成，等待 Phase 3 持久化与认证开发**。
+当前项目处于：**Phase 3 持久化与认证基础层已完成，等待真实 Supabase 迁移/RLS 配置与 Phase 4 AI/预览/导出开发**。
 
 理由：
 
@@ -12,9 +12,10 @@
 - Phase 1 已新增 `package.json`、`package-lock.json`、`README.md`、`.env.example`、Next.js App Router 页面入口、Tailwind 配置、TypeScript 配置和基础测试脚本。
 - 已建立 `src/app`、`src/components`、`src/features`、`src/lib`、`src/server`、`src/schemas`、`src/prompts`、`src/types` 目录边界。
 - 已完成 `npm install`、`npm run test`、`npm run typecheck`、`npm run lint`、`npm run build` 和 production server HTTP 验收。
-- 当前已实现 fixture/mock 驱动的前端工作台闭环，但仍未实现真实 AI、Supabase Auth、数据库、Sandpack、导出、版本回退和额度记录。
+- 当前已实现 fixture/mock 驱动的前端工作台闭环，并新增 Supabase Auth 服务端边界、Drizzle 最小 schema、受保护项目/工作台路由、项目归属服务边界和基础额度记录 schema。
+- 当前仍未实现真实 OpenAI 生成、Sandpack、导出打包、版本回退 UI、真实数据库 migration/RLS 验证和生产部署配置。
 
-因此，当前重点应从 Phase 2 前端闭环转向 Phase 3：接入轻量账号、项目归属、数据库持久化和基础额度记录，同时继续保持真实 AI、导出、版本回退等能力按后续阶段推进。
+因此，当前重点应从 Phase 3 基础层转向真实 Supabase 环境落地和 Phase 4：接入服务端 AI 生成、结构化输出校验、Sandpack 预览、项目级版本快照、回退和导出。
 
 ## 2. 当前已经完成的内容
 
@@ -24,17 +25,17 @@
 | 需求文档 | 已完成第一版产品需求梳理 | `docs/requirements.md` | 覆盖产品定位、MVP/P1/P2、功能需求、非功能需求、导出、多页面、对话修改、局部修改、版本、账号、额度、风险 |
 | PRD | 已完成结构化 PRD | `docs/PRD.md` | 覆盖用户角色、用户流程、页面清单、功能列表、Given/When/Then 验收标准、状态设计、视觉风格、信息架构、MVP 边界 |
 | 架构草案 | 已完成技术栈锁定与架构基线 | `docs/architecture.md` | 锁定 Next.js、TypeScript、Tailwind、Supabase、Drizzle、OpenAI Responses API、Zod、Sandpack、Vercel、Vitest、Playwright 等方向 |
-| 前端页面框架 | Phase 2 首页、登录占位、项目列表和工作台入口已实现 | `src/app/page.tsx`、`src/app/login/page.tsx`、`src/app/projects/page.tsx`、`src/app/workspace/page.tsx`、`src/app/layout.tsx`、`src/app/globals.css` | 使用 fixture/mock 数据，不包含真实 Auth、AI、DB 或导出 |
+| 前端页面框架 | Phase 2 首页、项目列表和工作台入口已实现；Phase 3 登录页和受保护项目/工作台路由已接入服务端 Auth 边界 | `src/app/page.tsx`、`src/app/login/page.tsx`、`src/app/projects/page.tsx`、`src/app/workspace/page.tsx`、`src/app/layout.tsx`、`src/app/globals.css` | 项目列表读取服务端持久化边界；工作台预览仍使用 fixture/mock；不包含真实 AI、Sandpack、导出或回退 |
 | 对话输入区 | Phase 2 mock 输入区已实现 | `src/features/workspace/components/WorkspacePage.tsx` | 支持草稿、空输入提示、生成中和成功占位状态；不触发真实 AI |
 | 生成结果展示区 | Phase 2 fixture 预览和代码视图已实现 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | 展示 fixture 页面内容和文件内容；不是真实生成结果 |
 | live preview / code view | 代码视图和静态预览已实现；真实 Sandpack 未接入 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | Sandpack 仍只在架构文档中作为后续技术基线 |
-| 项目历史 / 本地存储 | 未实现 | 无 | 版本快照、历史、回退和本地草稿均未实现 |
-| API route | 未实现 | 无 | 没有服务端路由或 Server Actions |
+| 项目历史 / 本地存储 | 部分建立数据结构 | `src/server/db/schema.ts` | 已有 `project_versions` 最小 schema；版本历史 UI、回退和真实快照写入仍未实现 |
+| API route / Server Actions | Phase 3 认证入口已实现 | `src/app/auth/callback/route.ts`、`src/server/auth/actions.ts` | 仅包含 Supabase Auth callback、登录和退出；生成、保存、导出 API 尚未实现 |
 | OpenAI 调用预留 | 仅有架构文档预留 | `docs/architecture.md` | 没有 SDK、环境变量、服务端 provider adapter 或 prompt 文件 |
 | 导出功能 | 未实现 | 无 | 仅 PRD 和架构中定义需求与服务端边界 |
 | 测试文件 | Phase 1 scaffold 检查和 Phase 2 workspace 检查已实现 | `tests/phase1-scaffold.test.mjs`、`tests/phase2-workspace.test.mjs` | 覆盖 scaffold、fixture 文件和关键工作台行为标记；schema、API、E2E 测试仍未建立 |
-| README / 文档 | README 和项目状态文档已同步 Phase 2 | `README.md`、`docs/requirements.md`、`docs/PRD.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | README 和 PROJECT_STATUS 已说明 Phase 2 范围、启动方式、检查命令和未实现能力 |
-| 环境变量配置 | 示例已补充 | `.env.example` | 不包含真实密钥；真实 `.env` 仍应本地私有 |
+| README / 文档 | README、架构和项目状态文档已同步 Phase 3 | `README.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | requirements 和 PRD 范围未变化；README、architecture、PROJECT_STATUS 已说明 Phase 3 基础层和未实现能力 |
+| 环境变量配置 | 示例已补充 Supabase Auth、Supabase database、OpenAI 占位 | `.env.example` | 不包含真实密钥；真实 `.env` 仍应本地私有 |
 | Git / GitHub / Issue 管理 | 远程已配置；Issue #2 已关闭；本地已有 Phase 2 单文件 commits | `.git/` | `origin` 指向 `https://github.com/GUANXIPENG/claude-design.git`；当前分支尚未 push |
 
 ### 2.1 2026-05-08 Phase 2 已完成内容
@@ -69,14 +70,14 @@
 | 生成结果展示区 | Phase 2 fixture 页面清单、预览和代码视图已实现；真实 AI 文件树未接入 | 可展示 mock 生成结果，后续需接 schema 校验后的 AI 输出 | 否，前端壳已解除；真实生成仍阻塞 MVP | Phase 4 |
 | Sandpack 预览 | Phase 2 静态预览和代码视图已实现；真实 Sandpack 沙盒未接入 | MVP 最终需要受控运行生成文件 | 是 | Phase 4 |
 | 真实 AI 生成逻辑 | 服务端 OpenAI 调用、prompt、结构化输出、Zod 校验未实现 | 产品核心能力依赖 AI 生成 | 是 | Phase 4 |
-| Supabase Auth | 轻量账号登录、会话、访问保护未实现 | 项目归属和私有项目依赖账号 | 是 | Phase 3 |
-| 数据库 schema | User、Project、Page、Version、Generation、Quota 等表未建立 | 项目持久化、版本和额度记录无法落地 | 是 | Phase 3 |
-| Drizzle ORM | schema、migration、数据库访问层未建立 | 架构基线要求类型化数据访问 | 是 | Phase 3 |
+| Supabase Auth | 服务端会话边界、登录/退出 action、受保护路由已建立；真实 Supabase 项目配置后可验证完整登录闭环 | 项目归属和私有项目依赖账号 | 否，基础层已解除；真实环境配置和 RLS 仍是上线前阻塞 | Phase 3 已完成基础层，后续补配置验证 |
+| 数据库 schema | UserProfile、Project、Page、ProjectVersion、ConversationMessage、GenerationRequest、GenerationResult、ExportRecord、Quota 最小 schema 已建立 | 项目持久化、版本和额度记录可继续落地 | 否，schema 基础层已解除；migration/RLS 仍阻塞生产落地 | Phase 3 已完成基础层，后续补 migration/RLS |
+| Drizzle ORM | 已安装 Drizzle 依赖、配置 `drizzle.config.ts`，并新增 server db client | 架构基线要求类型化数据访问 | 否，基础层已解除；真实迁移执行仍未完成 | Phase 3 已完成基础层，后续补 migration |
 | 多页面项目生成 | 页面地图、页面清单、页面跳转关系未实现 | MVP 不应只生成单页面 | 是 | Phase 4 |
 | 项目级版本快照 | 初始版本、修改版本、历史列表、回退未实现 | 用户无法撤回不满意结果 | 是 | Phase 4 |
 | 点击选择后局部修改 | 选择模式、选区高亮、选区上下文未实现 | PRD 核心差异化能力之一 | 是 | Phase 4 |
 | 导出功能 | 静态文件导出、可编辑项目结构导出、导出记录未实现 | 用户无法带走生成结果 | 是 | Phase 4 |
-| 额度限制 | 使用次数记录、额度提示、限制逻辑未实现 | 成本控制和未来商业化需要基础记录 | 是，基础记录阻塞；真实订阅不阻塞 | Phase 3 / Phase 4 |
+| 额度限制 | 已建立 quota schema 和 `recordQuotaUsage` 基础记录服务；额度提示、限制和扣减策略未实现 | 成本控制和未来商业化需要基础记录 | 否，基础记录边界已建立；真实限制逻辑仍需后续补齐 | Phase 3 已完成基础记录，Phase 4/5 补限制与 UI |
 | 部署配置 | Vercel 配置、环境变量、构建脚本缺失 | 无法部署预览或生产环境 | 是，部署前阻塞 | Phase 5 |
 | 测试覆盖 | Phase 1/2 脚本检查已建立；Vitest、schema fixtures、API 测试、Playwright 未建立 | 目前能验证 scaffold 与前端壳文件边界，无法验证核心服务端流程和安全边界 | 是，至少最小业务/安全测试阻塞可发布 MVP | Phase 5 |
 
@@ -87,21 +88,21 @@
 | 问题描述 | 影响范围 | 可能原因 | 建议解决方式 | 优先级 |
 |---|---|---|---|---|
 | Codex 环境中 `npm run dev` 返回 `spawn EPERM` | 无法在当前沙箱内验证 Next dev server | Next dev 内部使用 `child_process.fork`，当前环境限制 spawn | 在普通本机终端复验 `npm run dev`；当前以 build + `next start` HTTP 验收替代 | P1 |
-| 真实业务页面尚未接入持久化 | 用户可以体验 fixture 项目列表和工作台主流程，但无法保存真实项目 | Phase 2 仅实现前端壳 | Phase 3 接入 Auth、项目归属和数据库持久化 | P0 |
-| 真实 AI/Auth/DB/导出未接入 | MVP 核心能力仍不可用 | 尚未进入 Phase 3/4 | 按阶段接入 Supabase、Drizzle、OpenAI、Sandpack、导出和版本能力 | P0 |
+| 真实业务页面持久化闭环未完成 | 项目列表已接服务端持久化读取边界，但还没有真实项目创建 UI、migration/RLS 和远程数据库验证 | Phase 3 只完成基础层，尚未完成端到端项目创建 | 下一步补 Supabase migration/RLS 和最小项目创建流程 | P0 |
+| 真实 AI/Sandpack/导出未接入 | MVP 核心生成、预览运行和交付能力仍不可用 | 尚未进入 Phase 4 | 按阶段接入 OpenAI、Sandpack、导出和版本能力 | P0 |
 
 ### 4.2 高优先级问题
 
 | 问题描述 | 影响范围 | 可能原因 | 建议解决方式 | 优先级 |
 |---|---|---|---|---|
 | AI 生成逻辑未接入 | 产品核心能力不可用 | 尚无服务端代码和 OpenAI provider adapter | 先实现 mock/fixture 驱动的生成结果，再接 OpenAI 服务端调用 | P1 |
-| Supabase Auth 未接入 | 项目归属、私有项目、额度记录无法落地 | 尚无后端和环境变量 | Phase 3 接入轻量账号和访问保护 | P1 |
-| 数据库 schema 未建立 | 项目、页面、版本、对话、导出、额度无法持久化 | 尚未创建 Drizzle schema | 按架构草案建立最小表结构 | P1 |
+| Supabase Auth 真实环境未验证 | 服务端边界已建立，但没有真实 Supabase 项目配置时无法完成登录闭环 | 缺少真实环境变量和 Supabase 项目 | 配置 Supabase Auth 后复验 magic link 登录、退出和受保护路由 | P1 |
+| 数据库 migration / RLS 未建立 | schema 已在代码中定义，但还没有迁移文件、远程执行和 RLS policy | Phase 3 先建立 TypeScript schema | 创建 Drizzle migration，在 Supabase 执行并配置 RLS | P1 |
 | Sandpack 预览未接入 | 当前只能静态预览 fixture，无法运行生成项目文件 | Phase 2 只实现前端壳和代码视图 | Phase 4 接 Sandpack 和 AI 结果 | P1 |
 | 版本快照和回退未实现 | 修改风险高，用户无法撤销 | 无持久化和版本模型 | 在 AI 生成前先定义项目级快照结构 | P1 |
 | 导出功能未实现 | 用户无法保存或交付生成结果 | 无服务端导出逻辑 | Phase 4 实现当前版本导出，先限制文件范围 | P1 |
 | OpenAI key server-only 边界未落地 | 存在未来泄露风险 | 没有服务端实现 | 任何 AI 接入必须只在服务端读取密钥 | P1 |
-| 本地存储策略未实现 | 如果后续临时用 localStorage 保存主数据，会有数据丢失风险 | 当前只有架构约束，无代码约束 | 明确 localStorage 只用于草稿和 UI 状态 | P1 |
+| 本地存储策略需要继续守住 | Phase 3 代码没有把项目主数据写入 localStorage；后续开发仍需防止回退 | 项目主数据已转向服务端/数据库边界 | 保持 localStorage 只用于草稿和 UI 状态 | P1 |
 | Git 远程是否与本地同步待确认 | 可能本地还未推送任何内容 | `main` 无 commit，未执行 fetch/pull 对比 | 文档提交后再确认远程默认分支和同步策略 | P1 |
 
 ### 4.3 中低优先级技术债
@@ -112,7 +113,7 @@
 | 额度扣减策略未定 | 成本提示、导出、订阅 | PRD 和架构均保留待确认 | MVP 先按操作次数记录，后续补 token 成本 | P2 |
 | 响应式预览是否进入 MVP 待确认 | 工作台控件和验收范围 | PRD 建议 P1 三视口，MVP 可先基础预览 | Phase 2 先保留视口入口或只做桌面预览 | P2 |
 | 导出是否消耗额度待确认 | 成本控制和用户预期 | PRD 中明确待确认 | MVP 先记录导出行为，不做真实扣减 | P2 |
-| TODO / placeholder / mock 数据已进入 Phase 2 前端壳 | 暂不影响运行，但未来实现时要避免 mock 混入生产 | 当前使用 `src/lib/fixtures/workspace.ts` 驱动前端闭环 | Phase 3/4 建立 fixture 与 production 数据边界 | P3 |
+| TODO / placeholder / mock 数据仍保留在工作台预览 | 项目列表已转向服务端持久化读取，但工作台预览仍使用 `primaryFixtureProject` | Phase 4 前仍需要 fixture 表达预览壳 | Phase 4 接 AI/Sandpack 前继续保持 fixture 与 production 数据边界清晰 | P3 |
 | 项目边界文档未单独存在 | 新开发者需要从多份文档拼上下文 | 需求、PRD、架构已分散覆盖边界 | 如后续需要，可新增独立边界文档或在 README 汇总 | P3 |
 
 ## 5. 下一步开发计划
@@ -357,26 +358,26 @@
 
 ## 8. 当前代码质量评价
 
-当前已有 Phase 1 scaffold 和 Phase 2 fixture/mock 前端代码。以下评价聚焦当前工程状态：前端壳已可运行，但真实服务端、AI、数据库、Sandpack、导出、版本和额度逻辑仍未实现。
+当前已有 Phase 1 scaffold、Phase 2 fixture/mock 前端代码和 Phase 3 认证/持久化基础层。以下评价聚焦当前工程状态：前端壳已可运行，服务端 Auth/DB/schema 边界已建立，但真实 AI、Sandpack、导出、版本回退 UI、migration/RLS 和生产部署配置仍未实现。
 
 | 评价维度 | 当前评价 | 真实问题 |
 |---|---|---|
-| 目录结构是否清晰 | 已建立 `src/app`、`src/features`、`src/lib/fixtures` 等基础结构 | 后续 Phase 3/4 需要继续补 `server`、`schemas`、`prompts` 的真实实现 |
-| 前后端边界是否清晰 | 当前 Phase 2 仅前端 fixture，没有引入服务端敏感逻辑 | 后续接 AI/Auth/DB 时仍需验证 server-only 边界 |
-| 服务端逻辑是否安全 | 暂无真实服务端业务逻辑 | 无法验证 OpenAI key、数据库访问、日志脱敏和权限校验 |
+| 目录结构是否清晰 | 已建立 `src/app`、`src/features`、`src/lib/fixtures`、`src/server/auth`、`src/server/db`、`src/server/projects`、`src/server/quota` 等结构 | 后续 Phase 4 需要继续补 `server/ai`、`server/generation`、`server/export`、`server/versions` 和 `prompts` 的真实实现 |
+| 前后端边界是否清晰 | Phase 3 已把 Auth、DB、project ownership 和 quota 基础记录放在 server 侧 | 后续接 AI/导出时仍需继续验证 server-only 边界 |
+| 服务端逻辑是否安全 | Auth 和项目归属基础边界已建立，项目服务通过当前 session 绑定 owner | 仍需真实 Supabase RLS、migration、日志脱敏、AI 输出校验和导出权限校验 |
 | 组件是否过大 | 当前组件规模可接受 | `WorkspacePage` 后续接真实 Sandpack、版本、导出时需要继续拆分 |
 | 状态管理是否合理 | 当前只用 React 本地状态处理页面选择、草稿和 mock 生成状态 | 真实项目数据仍需服务端/数据库作为主数据源 |
-| 类型定义是否完整 | fixture 数据已有 TypeScript 类型 | 尚无 Zod schema、AI 输出 schema 和数据库类型 |
-| 错误处理是否充分 | Phase 2 覆盖空输入和 mock 状态提示 | 尚未覆盖真实网络、AI、保存、权限、导出失败 |
-| 测试是否足够 | 已有 Phase 1/2 脚本检查 | 仍缺 Vitest、Playwright、schema/API/安全测试 |
-| 是否存在明显重构点 | 下一步重点是从 fixture 前端壳转向持久化和认证 | 需要避免 mock 数据继续扩散为生产数据源 |
+| 类型定义是否完整 | 已有 fixture 类型、Zod project/quota schema 和 Drizzle 数据库 schema | 尚无 AI 输出 schema、导出 schema 和版本快照 schema 测试 |
+| 错误处理是否充分 | 登录页可提示 Supabase 配置缺失；Phase 2 覆盖空输入和 mock 状态提示 | 尚未覆盖真实网络、AI、保存、权限、导出失败 |
+| 测试是否足够 | 已有 Phase 1/2/3 脚本检查 | 仍缺 Vitest、Playwright、API 集成测试、RLS 验证和安全测试 |
+| 是否存在明显重构点 | 下一步重点是从 Phase 3 基础层转向真实 Supabase migration/RLS 和 Phase 4 AI/版本/导出 | 需要避免工作台 fixture 继续扩散为生产数据源 |
 
 ### 当前代码质量结论
 
-- 文档质量较完整，已经足以指导 Phase 3 持久化与认证。
-- 工程已有可运行 scaffold 和 Phase 2 前端壳，但真实业务能力仍未接入。
-- 不应把 Phase 2 fixture 误认为真实 AI、Auth、DB、Sandpack、导出或版本能力。
-- 下一步最重要的是建立轻量账号、项目归属、数据库持久化和基础额度记录，并继续保持 server-only 安全边界。
+- 文档质量较完整，已经同步 Phase 3 基础层，并继续指导后续 Supabase migration/RLS 与 Phase 4 开发。
+- 工程已有可运行 scaffold、Phase 2 前端壳和 Phase 3 认证/持久化基础层。
+- 不应把 Phase 2 fixture 误认为真实 AI、Sandpack、导出或版本回退能力；项目列表已不再使用 fixture 作为生产数据源。
+- 下一步最重要的是落地 Supabase migration/RLS 与最小项目创建流程，然后进入 Phase 4 的 AI、版本、预览和导出能力。
 
 ## 9. 持续更新规则
 
@@ -455,3 +456,47 @@
 - 进入 Phase 3：接入 Supabase Auth、项目归属、数据库持久化和基础额度记录。
 - 在 Phase 3 前补充最小认证/项目持久化 Issue，明确未登录访问、项目归属和 localStorage 仅用于草稿/UI 状态的验收标准。
 - 保持 Phase 2 fixture 边界清晰，避免把 mock 项目数据误当作真实持久化数据源。
+
+## 12. 2026-05-08 Phase 3 开发更新
+
+本次完成 Issue #3：`feat: implement phase 3 persistence and auth foundation`。
+
+已完成内容：
+
+- 创建独立开发分支：`feat-issue-3-phase-3-persistence-auth`。因当前 Git refs 写入环境无法创建 `feat/issue-3-...` 斜杠分支名，本次继续使用等价短横线分支名。
+- 新增 Supabase Auth 服务端边界：`src/server/auth/session.ts` 和 `src/server/auth/actions.ts`。
+- 新增 `/auth/callback` route handler，用于处理 Supabase magic link 回调。
+- `/projects` 和 `/workspace` 已改为受保护页面，未登录用户会跳转到 `/login`。
+- 登录页已从 Phase 2 占位更新为 Supabase Auth 邮箱登录入口，并在环境变量缺失时显示配置提示。
+- 新增 Drizzle schema：`user_profiles`、`projects`、`pages`、`project_versions`、`conversation_messages`、`generation_requests`、`generation_results`、`export_records`、`quotas`。
+- 新增 `src/server/projects` 项目 repository/service，项目读取和创建绑定当前 authenticated owner，不信任前端传入用户身份。
+- 新增 `src/server/quota/quotaService.ts`，为 generate、iterate、repair、export 操作记录基础使用次数。
+- 新增 `src/schemas/project.ts` 和 `src/schemas/quota.ts`，用于 Phase 3 输入结构校验。
+- 新增 `drizzle.config.ts` 和 `SUPABASE_DATABASE_URL` 环境变量占位。
+- 新增 `tests/phase3-persistence-auth.test.mjs`，并把 `npm run test` 扩展为覆盖 Phase 1、Phase 2 和 Phase 3 检查。
+- 更新 `README.md` 和 `docs/architecture.md`，记录 Phase 3 当前能力、边界和 ADR-0002。
+
+本次未实现：
+
+- 未接入真实 OpenAI 生成、AI structured output、prompt 模板或 provider adapter。
+- 未接入 Sandpack 运行时预览。
+- 未实现导出打包、导出下载、版本回退 UI 或真实版本历史页面。
+- 未创建真实 Supabase migration 文件，未在远程数据库执行 schema，未配置 RLS policy。
+- 未实现真实项目创建 UI；项目列表现在读取服务端持久化边界，未配置数据库或未创建项目时显示空状态。
+- 未接入真实订阅、支付或额度扣减策略；当前只建立操作次数记录边界。
+
+本次验收结果：
+
+- 已执行 `node tests\phase3-persistence-auth.test.mjs`，先确认测试因缺失 Phase 3 文件失败，再实现到通过。
+- 后续完整验收以本次最终回复中的命令结果为准。
+
+当前仍存在的环境限制：
+
+- 没有真实 Supabase 项目和数据库连接时，登录和项目读取只能验证服务端边界与配置缺失提示，无法完成真实用户会话闭环。
+- 真实上线前必须创建 Drizzle migration、执行数据库变更，并配置 Supabase RLS，确保项目、页面、版本、对话、导出和额度记录按用户隔离。
+
+下一阶段建议：
+
+- 补 Issue：创建并验证 Supabase migration 与 RLS policy。
+- 补 Issue：实现最小项目创建流程，把真实项目写入 `projects` 和 `pages`。
+- 进入 Phase 4 前，先补 AI 输出 schema、路径 allowlist 和版本快照写入测试。

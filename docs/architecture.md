@@ -879,3 +879,64 @@ MVP 基线采用：
 - localStorage 不能作为项目主存储。
 - Sandpack 不是完整安全策略，只是预览运行环境的一部分。
 - 架构变化必须写 ADR。
+
+## 8. Phase 3 实施记录
+
+### ADR-0002: 建立 Supabase Auth 与 Drizzle 持久化基础层
+
+#### 状态
+
+Accepted
+
+#### 背景
+
+Phase 2 已完成 fixture/mock 驱动的前端闭环，但 PROJECT_STATUS 明确下一阶段需要接入轻量账号、项目归属、数据库持久化和基础额度记录。没有这一层，项目列表、工作台私有内容、额度记录和后续版本/导出能力都无法绑定到真实用户。
+
+#### 决策
+
+Phase 3 基础层采用：
+
+- `@supabase/ssr` 和 `@supabase/supabase-js` 建立 server-side Supabase Auth 会话边界。
+- `/projects` 和 `/workspace` 通过 `requireCurrentUser` 读取当前用户；未登录用户跳转 `/login`。
+- `drizzle-orm`、`postgres` 和 `drizzle-kit` 建立 PostgreSQL schema 与迁移工具基础。
+- `src/server/db/schema.ts` 定义 `user_profiles`、`projects`、`pages`、`project_versions`、`conversation_messages`、`generation_requests`、`generation_results`、`export_records`、`quotas` 的最小表结构。
+- `src/server/projects` 只接受当前 session 推导出的 owner，不信任前端传入的用户身份。
+- `src/server/quota` 先记录操作次数，不接真实订阅或支付。
+
+#### 备选方案
+
+- 继续使用 fixture/mock 项目数据：无法满足 Phase 3 的项目归属和持久化目标。
+- 直接使用 Supabase client 查询而不引入 Drizzle：迁移和类型边界较弱，偏离既定架构基线。
+- 自建 Auth：安全成本和实现范围超过 MVP。
+
+#### 取舍原因
+
+该方案沿用 ADR-0001 的技术栈，不引入新的产品范围。Supabase Auth 解决轻量账号和 session 问题，Drizzle 提供后续版本、导出、额度和生成记录需要的类型化 schema。当前只建立基础边界，避免提前实现团队、分享、订阅、真实 AI 或导出打包。
+
+#### 影响范围
+
+- `src/server/auth`
+- `src/server/db`
+- `src/server/projects`
+- `src/server/quota`
+- `src/schemas`
+- `/login`、`/projects`、`/workspace`
+- `.env.example`
+- `package.json` / `package-lock.json`
+- `drizzle.config.ts`
+
+#### 风险
+
+- 本地未配置 Supabase 环境变量时无法真实登录，页面会显示配置缺失提示。
+- 目前尚未创建真实数据库 migration 文件或 RLS policy；部署前仍需在 Supabase 中执行迁移并配置 RLS。
+- 项目列表已经转为服务端持久化读取，未配置数据库时会显示空状态，不再显示 fixture 项目卡片。
+
+#### 是否影响 MVP 范围
+
+否。该决策实现既定 MVP 的 Phase 3 基础能力，不新增 P1/P2 能力。
+
+#### 后续动作
+
+- 创建并验证 Drizzle migration。
+- 配置 Supabase RLS，确保项目、页面、版本、对话、导出和额度记录按用户隔离。
+- 在 Phase 4 接入真实 AI 生成前，把生成结果 schema、路径安全和版本快照写入同一服务端边界。

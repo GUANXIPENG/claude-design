@@ -4,27 +4,27 @@
 
 ## 1. 当前项目阶段
 
-当前项目处于：**架构设计阶段**。
+当前项目处于：**MVP Scaffold 已建立，等待 Phase 2 前端闭环开发**。
 
 理由：
 
-- 仓库中已经完成三份关键文档：`docs/requirements.md`、`docs/PRD.md`、`docs/architecture.md`。
-- 需求范围、PRD、MVP 边界、核心流程、技术栈基线和架构草案已经有文档记录。
-- 仓库当前没有源码目录、`package.json`、`README.md`、环境变量示例、测试文件、配置文件或依赖锁文件。
-- 项目尚未进入 MVP Scaffold 阶段，因为还没有可运行应用、页面框架、API route、前端入口或服务端入口。
-- 当前 `main` 分支没有任何 commit，`docs/` 仍处于未跟踪状态。
+- 仓库中已经完成关键产品与架构文档：`docs/requirements.md`、`docs/PRD.md`、`docs/architecture.md`。
+- Phase 1 已新增 `package.json`、`package-lock.json`、`README.md`、`.env.example`、Next.js App Router 页面入口、Tailwind 配置、TypeScript 配置和基础测试脚本。
+- 已建立 `src/app`、`src/components`、`src/features`、`src/lib`、`src/server`、`src/schemas`、`src/prompts`、`src/types` 目录边界。
+- 已完成 `npm install`、`npm run test`、`npm run typecheck`、`npm run lint`、`npm run build` 和 production server HTTP 验收。
+- 当前仍未实现真实 AI、Supabase Auth、数据库、Sandpack、导出、版本回退、额度记录和工作台闭环。
 
-因此，当前重点不是开发复杂功能，而是先把项目从“文档和架构设计”推进到“可运行、可测试、可验证的 MVP Scaffold”。
+因此，当前重点应从 Phase 1 scaffold 转向 Phase 2：用 fixture/mock 数据补齐首页、项目列表、工作台三栏、输入区、预览区和代码视图区的前端闭环。
 
 ## 2. 当前已经完成的内容
 
 | 模块 | 当前状态 | 相关文件 | 备注 |
 |---|---|---|---|
-| 项目初始化 | Git 仓库已存在，当前分支为 `main`，远程 `origin` 已配置 | `.git/` | `main` 分支无 commit；`docs/` 未跟踪；尚无 README、源码和 package 配置 |
+| 项目初始化 | Git 仓库已存在，当前开发分支为 `phase-1-scaffold`，远程 `origin` 已配置 | `.git/` | Phase 1 scaffold 改动已准备提交；Issue 编号仍待补 |
 | 需求文档 | 已完成第一版产品需求梳理 | `docs/requirements.md` | 覆盖产品定位、MVP/P1/P2、功能需求、非功能需求、导出、多页面、对话修改、局部修改、版本、账号、额度、风险 |
 | PRD | 已完成结构化 PRD | `docs/PRD.md` | 覆盖用户角色、用户流程、页面清单、功能列表、Given/When/Then 验收标准、状态设计、视觉风格、信息架构、MVP 边界 |
 | 架构草案 | 已完成技术栈锁定与架构基线 | `docs/architecture.md` | 锁定 Next.js、TypeScript、Tailwind、Supabase、Drizzle、OpenAI Responses API、Zod、Sandpack、Vercel、Vitest、Playwright 等方向 |
-| 前端页面框架 | 未实现 | 无 | 不可运行；没有 `src/`、`app/`、页面、组件或样式文件 |
+| 前端页面框架 | Phase 1 最小入口已实现 | `src/app/page.tsx`、`src/app/layout.tsx`、`src/app/globals.css` | 仅为 scaffold 占位页，不包含 Phase 2 工作台闭环 |
 | 对话输入区 | 未实现 | 无 | 目前只有 PRD 和需求描述，没有 UI 或状态逻辑 |
 | 生成结果展示区 | 未实现 | 无 | 没有预览容器、文件树、代码查看或生成结果结构 |
 | live preview / code view | 未实现 | 无 | Sandpack 只在架构文档中作为技术基线，尚未接入 |
@@ -32,19 +32,19 @@
 | API route | 未实现 | 无 | 没有服务端路由或 Server Actions |
 | OpenAI 调用预留 | 仅有架构文档预留 | `docs/architecture.md` | 没有 SDK、环境变量、服务端 provider adapter 或 prompt 文件 |
 | 导出功能 | 未实现 | 无 | 仅 PRD 和架构中定义需求与服务端边界 |
-| 测试文件 | 未实现 | 无 | 没有单元测试、schema fixtures、API 测试或 E2E 测试 |
-| README / 文档 | 需求、PRD、架构已完成；README 缺失 | `docs/requirements.md`、`docs/PRD.md`、`docs/architecture.md` | 需要补 README、开发指南、环境变量说明 |
-| 环境变量配置 | 未实现 | 无 | 没有 `.env` 或 `.env.example` |
+| 测试文件 | Phase 1 scaffold 检查已实现 | `tests/phase1-scaffold.test.mjs` | 仅覆盖 scaffold 存在性；业务、schema、API、E2E 测试仍未建立 |
+| README / 文档 | README 已补充 | `README.md`、`docs/requirements.md`、`docs/PRD.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | 已说明 Phase 1 范围、启动方式和未实现能力 |
+| 环境变量配置 | 示例已补充 | `.env.example` | 不包含真实密钥；真实 `.env` 仍应本地私有 |
 | Git / GitHub / Issue 管理 | 远程已配置；无提交；Issue 状态待确认 | `.git/` | `origin` 指向 `https://github.com/GUANXIPENG/claude-design.git`；未检查 GitHub Issue |
 
 ## 3. 当前未完成的内容
 
 | 未完成项 | 缺什么 | 为什么重要 | 是否阻塞 MVP | 建议何时做 |
 |---|---|---|---|---|
-| MVP Scaffold | `package.json`、Next.js 项目结构、TypeScript、Tailwind、基础页面 | 没有 scaffold 就无法运行、构建或验证任何功能 | 是 | Phase 1 |
-| 包管理器与依赖 | 当前 shell 中 `npm`、`pnpm`、`yarn`、`corepack` 未找到；没有依赖文件 | 无法安装依赖、启动 dev server、运行 build/test | 是 | Phase 1 |
-| README | 项目启动、开发、环境变量、脚本说明缺失 | 后续开发者无法快速进入项目 | 是 | Phase 1 |
-| `.env.example` | Supabase、OpenAI、站点 URL 等变量示例缺失 | 无法建立安全配置边界 | 是 | Phase 1 |
+| MVP Scaffold | 已完成 Phase 1 最小 scaffold；后续需补真实业务页面 | 当前只具备最小首页和目录边界，尚无产品闭环 | 否，Phase 1 已解除；Phase 2 继续扩展 | Phase 2 |
+| 包管理器与依赖 | 已安装 Node/npm 并生成 `package-lock.json` | Codex 环境下 `npm run dev` 仍因 `spawn EPERM` 受限 | 否，构建与 production server 验收已通过 | Phase 2 前在普通终端复验 |
+| README | 已补充启动、开发、环境变量、脚本说明 | 后续阶段需持续同步新增功能 | 否 | 持续更新 |
+| `.env.example` | 已补充 Supabase、OpenAI、站点 URL 等变量示例 | 后续接入服务时需确认变量是否完整 | 否 | Phase 3 / Phase 4 |
 | 首页 / 登录 / 项目列表 / 工作台页面 | 页面和布局均未实现 | PRD 的核心用户路径无法验证 | 是 | Phase 2 |
 | 对话输入区 | 输入框、提交状态、空值校验、修改模式均未实现 | 是生成和迭代的入口 | 是 | Phase 2 |
 | 生成结果展示区 | 页面清单、文件树、代码视图、预览容器未实现 | 无法展示 AI 生成结果 | 是 | Phase 2 |
@@ -67,12 +67,9 @@
 
 | 问题描述 | 影响范围 | 可能原因 | 建议解决方式 | 优先级 |
 |---|---|---|---|---|
-| 没有源码目录和应用入口 | 无法运行、开发、构建或部署 | 当前项目只完成文档阶段 | 初始化 Next.js + TypeScript + Tailwind MVP scaffold | P0 |
-| 没有 `package.json` | 无法安装依赖、定义脚本、启动 dev server、运行测试 | 尚未 scaffold | 创建 package 配置并锁定包管理器 | P0 |
-| 当前 shell 中 `npm`、`pnpm`、`yarn`、`corepack` 未找到 | 无法通过常规 Node 包管理命令安装或运行项目 | 当前环境 PATH 或 Node runtime 只暴露了 Codex 内置 `node` | 在 Phase 1 前确认本机 Node/npm 安装或使用项目指定包管理器 | P0 |
-| 没有 `.env` 或 `.env.example` | 无法配置 OpenAI、Supabase、站点 URL 等变量 | 尚未进入实现阶段 | 添加 `.env.example`，真实 `.env` 保持本地私有 | P0 |
-| `main` 分支无 commit，`docs/` 未跟踪 | 当前文档成果没有版本记录，协作和回滚困难 | 文档尚未提交 | 先提交文档基线，再开始 scaffold | P0 |
-| 无 dev server / build / typecheck / lint / test 脚本 | 无法验证项目状态 | 无 package 配置 | Phase 1 建立基础脚本 | P0 |
+| Codex 环境中 `npm run dev` 返回 `spawn EPERM` | 无法在当前沙箱内验证 Next dev server | Next dev 内部使用 `child_process.fork`，当前环境限制 spawn | 在普通本机终端复验 `npm run dev`；当前以 build + `next start` HTTP 验收替代 | P1 |
+| 真实业务页面尚未实现 | 用户无法体验项目列表和工作台主流程 | Phase 1 仅建立 scaffold | Phase 2 用 fixture/mock 数据实现前端闭环 | P0 |
+| 真实 AI/Auth/DB/导出未接入 | MVP 核心能力仍不可用 | 尚未进入 Phase 3/4 | 按阶段接入 Supabase、Drizzle、OpenAI、Sandpack、导出和版本能力 | P0 |
 
 ### 4.2 高优先级问题
 
@@ -373,3 +370,36 @@
 - 更新风险概率和缓解状态。
 - 如果架构变化，必须同步更新 `docs/architecture.md` 的 ADR。
 
+## 10. 2026-05-08 Phase 1 开发更新
+
+本次已完成 Phase 1 的最小工程 scaffold：
+
+- 新增 `package.json`，定义 `dev`、`build`、`typecheck`、`lint`、`test` 基础脚本。
+- 新增 Next.js App Router + TypeScript + Tailwind CSS 的最小页面入口。
+- 新增 `src/app`、`src/components`、`src/features`、`src/lib`、`src/server`、`src/schemas`、`src/prompts`、`src/types` 目录边界。
+- 新增 `README.md`，说明当前 Phase 1 范围、启动方式、检查命令和未实现能力。
+- 新增 `.env.example`，列出 Supabase、OpenAI 和站点 URL 占位变量，不包含真实密钥。
+- 新增 `tests/phase1-scaffold.test.mjs`，用于验证 Phase 1 scaffold 文件、脚本和环境变量占位。
+- 新增 `.gitignore`，排除 `node_modules`、`.next`、`.env`、日志和本地 worktree 目录。
+
+本次验收结果：
+
+- 已通过 `winget` 安装 Node.js LTS，当前可用 `node` 和 `npm`。
+- 已执行 `npm install`，生成 `package-lock.json`。
+- 已执行 `npm run test`，通过 Phase 1 scaffold 检查。
+- 已执行 `npm run typecheck`，TypeScript 校验通过。
+- 已执行 `npm run lint`，ESLint 校验通过。
+- 已执行 `npm run build`，Next.js production build 通过。
+- 已执行 `npm audit --audit-level=high`，无 high severity 阻塞项；当前仍有 Next 依赖链中的 moderate PostCSS advisory，需后续跟随 Next 修复版本处理。
+- 已执行 `next start -p 3000` 并请求 `http://127.0.0.1:3000`，返回 200 且页面包含 `AI Design Workspace`。
+
+当前仍存在的环境限制：
+
+- 在当前 Codex Windows 执行环境中，`npm run dev` 触发 Next dev 内部 `child_process.fork` 后返回 `spawn EPERM`。
+- 该限制与本环境对子进程 spawn 的限制一致；独立 `typecheck`、`lint`、`build` 和 production server HTTP 验收均已通过。
+- Next build 同样需要 worker 配置，因此 `next.config.mjs` 中将 production build 限制为 `experimental.cpus = 1` 且启用 `experimental.workerThreads = true`；内置 build typecheck 被跳过，类型校验由独立 `npm run typecheck` 负责。
+
+下一阶段建议：
+
+- 在普通本机终端重新执行 `npm run dev`，确认开发服务器在非 Codex sandbox 环境下可启动。
+- 进入 Phase 2 前端闭环前，优先补项目列表和工作台 fixture 页面，继续保持真实 AI、Supabase 和导出能力不接入。

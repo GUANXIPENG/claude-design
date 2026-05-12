@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前仍未完成真实 Supabase migration/RLS、真实 OpenAI provider、真实 Sandpack runtime、导出 zip 下载、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件；仍未完成真实 Supabase 远程执行与跨用户 RLS 验证、真实 OpenAI provider、真实 Sandpack runtime、导出 zip 下载、Playwright E2E 和生产部署配置。
 
 ### 1.2 架构目标
 
@@ -838,7 +838,7 @@ MVP 基线采用：
 |---|---|---|
 | PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而架构文档需要锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
 | Phase 4 基础层不等于完整 Phase 4 闭环 | 当前已有 schema、mock provider、版本和导出 manifest 服务边界，但真实 OpenAI、Sandpack runtime、数据库写入和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“基础边界已实现”和“真实闭环未实现” |
-| Supabase schema 与真实数据库仍未对齐 | Drizzle schema 已存在，但 migration/RLS 尚未落地 | 后续必须创建 migration、执行数据库变更并配置 RLS |
+| Supabase schema 与真实数据库仍未对齐 | Drizzle schema 和本地 migration/RLS 文件已存在，但尚未在真实 Supabase 项目执行和验证 | 后续必须执行数据库变更、应用 RLS policy，并验证跨用户隔离 |
 
 ### 6.2 待确认问题
 
@@ -928,7 +928,7 @@ Phase 3 基础层采用：
 #### 风险
 
 - 本地未配置 Supabase 环境变量时无法真实登录，页面会显示配置缺失提示。
-- 目前尚未创建真实数据库 migration 文件或 RLS policy；部署前仍需在 Supabase 中执行迁移并配置 RLS。
+- ADR-0002 完成时尚未创建真实数据库 migration 文件或 RLS policy；当前已由 ADR-0004 补齐本地 SQL/RLS 文件，部署前仍需在 Supabase 中执行迁移并验证 RLS。
 - 项目列表已经转为服务端持久化读取，未配置数据库时会显示空状态，不再显示 fixture 项目卡片。
 
 #### 是否影响 MVP 范围
@@ -937,8 +937,8 @@ Phase 3 基础层采用：
 
 #### 后续动作
 
-- 创建并验证 Drizzle migration。
-- 配置 Supabase RLS，确保项目、页面、版本、对话、导出和额度记录按用户隔离。
+- 本地 Drizzle migration SQL 已由 ADR-0004 补齐；后续需要在真实 Supabase 项目执行并验证。
+- 本地 Supabase RLS policy SQL 已由 ADR-0004 补齐；后续需要在真实 Supabase 项目应用并验证项目、页面、版本、对话、导出和额度记录按用户隔离。
 - 在 Phase 4 接入真实 AI 生成前，把生成结果 schema、路径安全和版本快照写入同一服务端边界。
 
 ## 9. Phase 4 实施记录
@@ -1002,8 +1002,62 @@ Phase 4 基础层采用：
 
 - 用真实 OpenAI Responses API provider 替换 mock provider，并保留同一 `AiProvider` 接口。
 - 接入 Sandpack，把通过 schema 校验的文件树载入受控预览。
-- 将版本快照、生成记录和导出记录写入 Supabase，并补 migration/RLS。
+- 将版本快照、生成记录和导出记录写入 Supabase，并基于 ADR-0004 的 migration/RLS 文件执行真实数据库验证。
 - 实现导出 zip / 静态包下载。
+
+### ADR-0004: 补齐 Supabase migration 与 RLS policy 基础层
+
+#### 状态
+
+Accepted
+
+#### 背景
+
+Issue #6 对应 Phase 4 后续落地顺序的第 1 步：在真实 OpenAI、Sandpack runtime、版本持久化和导出打包之前，先把 Supabase PostgreSQL schema migration 与 RLS policy 文件落到仓库中。Phase 3 已有 Drizzle schema 和服务端项目归属边界，但缺少可执行 SQL 与数据库层隔离策略，无法支撑后续真实持久化和上线前权限验收。
+
+#### 决策
+
+本阶段新增：
+
+- `drizzle/0001_initial_schema.sql`：定义 `generation_mode`、`generation_status`、`quota_operation` enum，并创建 `user_profiles`、`projects`、`pages`、`project_versions`、`conversation_messages`、`generation_requests`、`generation_results`、`export_records`、`quotas` 表、外键和常用索引。
+- `supabase/policies/0001_project_rls.sql`：为业务表启用 RLS，并按 `auth.uid()`、`projects.owner_id`、`generation_requests.requested_by_id`、`quotas.user_id` 等归属条件限制读取和写入。
+- `tests/phase4-supabase-migration-rls.test.mjs`：用脚本级检查锁定 migration/RLS 文件、关键 policy 名称、owner/user 隔离条件和文档同步标记。
+
+服务端仍必须继续执行权限校验；RLS 是数据库层兜底，不替代 `src/server` 中的 owner 校验。Supabase service role key 仍只允许在服务端受控使用，不能进入浏览器 bundle。
+
+#### 备选方案
+
+- 只依赖 Drizzle schema 自动推导迁移：无法在当前仓库中明确审查 RLS policy 和安全边界。
+- 等真实 Supabase 项目准备好后再写 SQL：会阻塞后续版本、生成记录和导出记录持久化开发。
+- 只靠服务端 owner 校验不配置 RLS：数据库层缺少最后一道隔离边界，不符合架构和 AGENTS 安全要求。
+
+#### 取舍原因
+
+先提交本地 migration/RLS 文件可以让后续持久化服务在稳定表结构上开发，也让权限策略进入代码审查和测试范围。真实 Supabase 远程执行仍需要单独环境变量和项目权限，因此本阶段只完成仓库内可验证基础层，不声称已经完成远程数据库部署或跨用户真实查询验证。
+
+#### 影响范围
+
+- `drizzle/0001_initial_schema.sql`
+- `supabase/policies/0001_project_rls.sql`
+- `tests/phase4-supabase-migration-rls.test.mjs`
+- `docs/PROJECT_STATUS.md`
+- `package.json`
+
+#### 风险
+
+- 当前 SQL 尚未在真实 Supabase 项目执行，可能仍需要根据远程数据库状态调整 migration 顺序。
+- RLS policy 文件已覆盖当前 MVP 表，但后续新增分享、团队、公开模板或协作时必须重新设计权限模型。
+- 当前检查能验证 SQL 文件包含关键策略，不能替代真实多用户集成测试。
+
+#### 是否影响 MVP 范围
+
+否。该决策只补齐既定 MVP 的数据库和权限基础，不新增团队协作、公开分享或企业权限能力。
+
+#### 后续动作
+
+- 在真实 Supabase 项目执行 `drizzle/0001_initial_schema.sql` 和 `supabase/policies/0001_project_rls.sql`。
+- 用不同用户验证 projects/pages/versions/messages/generation/export/quota 的跨用户隔离。
+- 进入下一个 Issue：将版本快照、generation request/result 和 conversation message 写入 Supabase/Drizzle 服务层。
 
 ### 9.2 Phase 4 后续落地顺序
 

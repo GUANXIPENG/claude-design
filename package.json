@@ -7,7 +7,7 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "node tests/phase1-scaffold.test.mjs"
+    "test": "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs"
   },
   "dependencies": {
     "next": "^16.2.5",

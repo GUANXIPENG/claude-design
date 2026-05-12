@@ -19,7 +19,10 @@ assert.equal(pkg.scripts.dev, "next dev");
 assert.equal(pkg.scripts.build, "next build");
 assert.equal(pkg.scripts.typecheck, "tsc --noEmit");
 assert.equal(pkg.scripts.lint, "eslint src --ext .ts,.tsx");
-assert.equal(pkg.scripts.test, "node tests/phase1-scaffold.test.mjs");
+assert.equal(
+  pkg.scripts.test,
+  "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs"
+);
 assert.ok(pkg.dependencies.next);
 assert.ok(pkg.dependencies.react);
 assert.ok(pkg.dependencies["react-dom"]);

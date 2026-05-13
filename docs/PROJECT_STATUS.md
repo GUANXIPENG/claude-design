@@ -637,3 +637,29 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 - 在 GitHub 上补建对应 Issue，并把本地分支关联到该 Issue。
 - 进入下一阶段 Issue：`feat: connect openai responses provider`。
 - 在真实 Supabase 项目执行 migration/RLS 后，用真实数据库验证版本、生成、对话、导出和额度记录写入。
+
+## 17. 2026-05-13 Supabase remote migration/RLS verification attempt
+
+This follow-up created GitHub Issue #13: `test: verify remote supabase migration and rls`, and created the branch `test/issue-13-supabase-remote-rls-verify`. The target Supabase project ref is `bwpbhrbabtgotkhpouuu`.
+
+Completed:
+
+- Created Issue #13 with background, goals, non-goals, related docs, affected modules, acceptance criteria, test requirements, risks, and documentation update requirements.
+- Confirmed the GitHub CLI account has `ADMIN` permission on `GUANXIPENG/claude-design`.
+- Confirmed Supabase CLI version `2.98.2`, and checked the current `link`, `db query`, and `db push` command help before attempting remote work.
+- Attempted Supabase MCP `_list_migrations` for `bwpbhrbabtgotkhpouuu`; it returned a permission error.
+- Attempted `supabase link --project-ref bwpbhrbabtgotkhpouuu --yes`; it returned `Authorization failed for the access token and project ref pair: {"message":"Not Found"}`.
+- Re-ran the link attempt with `--debug`; the CLI requested the target project and api keys endpoints and returned the same authorization failure.
+- Checked the current process environment for Supabase/Postgres/DATABASE fallback connection variables; none were available.
+- Added `supabase/.temp/` to `.gitignore` so Supabase CLI local link metadata is not committed.
+
+Not completed:
+
+- Did not execute `drizzle/0001_initial_schema.sql` against the real Supabase project.
+- Did not execute `supabase/policies/0001_project_rls.sql` against the real Supabase project.
+- Did not run remote table, enum, index, RLS, policy, cross-user isolation, or advisor verification.
+
+Current blocker:
+
+- The current Supabase credentials cannot access project ref `bwpbhrbabtgotkhpouuu`. Both Supabase CLI and Supabase MCP report the project as unavailable or unauthorized.
+- Continue Issue #13 after logging into a Supabase account that can access `bwpbhrbabtgotkhpouuu`, or after providing a safe remote Postgres connection method for this environment.

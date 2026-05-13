@@ -4,7 +4,7 @@
 
 ## 1. 当前项目阶段
 
-当前项目处于：**Phase 4 生成、版本与导出基础层已完成，Supabase migration/RLS 本地文件已补齐，等待真实 Supabase 执行验证、真实 OpenAI、Sandpack runtime 和导出打包落地**。
+当前项目处于：**Phase 4 生成、版本与导出基础层已完成，Supabase migration/RLS 本地文件已补齐，版本/生成/导出记录持久化服务边界已补齐，等待真实 Supabase 执行验证、真实 OpenAI、Sandpack runtime 和导出打包落地**。
 
 理由：
 
@@ -15,7 +15,8 @@
 - 当前已实现 fixture/mock 驱动的前端工作台闭环，并新增 Supabase Auth 服务端边界、Drizzle 最小 schema、受保护项目/工作台路由、项目归属服务边界和基础额度记录 schema。
 - 当前已新增 Phase 4 的生成输出 schema、路径安全校验、mock AI provider、生成/迭代编排、版本快照/回退数据边界、导出 manifest 边界和工作台 Phase 4 状态入口。
 - 当前已新增 Supabase 初始 schema migration SQL 和项目归属 RLS policy SQL。
-- 当前仍未实现真实 OpenAI 网络调用、真实 Sandpack runtime、导出 zip 下载、版本记录数据库写入、真实数据库 migration/RLS 远程执行验证和生产部署配置。
+- 当前仍未实现真实 OpenAI 网络调用、真实 Sandpack runtime、导出 zip 下载、真实数据库 migration/RLS 远程执行验证和生产部署配置。
+- 当前已新增版本快照、generation request/result、conversation message 和 export record 的 Drizzle 持久化服务边界；在未配置数据库时保持 no-op，便于本地脚本验证。
 
 因此，当前重点应从 Phase 4 基础边界转向真实 Supabase migration/RLS 执行验证、版本/导出持久化、真实 OpenAI provider、Sandpack 受控预览和最终导出打包。
 
@@ -31,11 +32,11 @@
 | 对话输入区 | Phase 2 mock 输入区已实现 | `src/features/workspace/components/WorkspacePage.tsx` | 支持草稿、空输入提示、生成中和成功占位状态；不触发真实 AI |
 | 生成结果展示区 | Phase 2 fixture 预览和代码视图已实现 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | 展示 fixture 页面内容和文件内容；不是真实生成结果 |
 | live preview / code view | 代码视图和静态预览已实现；真实 Sandpack 未接入 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | Sandpack 仍只在架构文档中作为后续技术基线 |
-| 项目历史 / 本地存储 | 部分建立数据结构 | `src/server/db/schema.ts` | 已有 `project_versions` 最小 schema；版本历史 UI、回退和真实快照写入仍未实现 |
+| 项目历史 / 本地存储 | 已建立数据结构和服务端持久化边界 | `src/server/db/schema.ts`、`src/server/versions/versionRepository.ts` | 已有 `project_versions` 最小 schema 和版本写入服务；版本历史 UI、真实回退闭环和远程数据库验证仍未实现 |
 | API route / Server Actions | Phase 3 认证入口已实现 | `src/app/auth/callback/route.ts`、`src/server/auth/actions.ts` | 仅包含 Supabase Auth callback、登录和退出；生成、保存、导出 API 尚未实现 |
 | OpenAI 调用预留 | Phase 4 已建立服务端 provider adapter 和 mock provider；真实 OpenAI Responses API 尚未接入 | `src/server/ai/provider.ts`、`src/prompts/generation.ts`、`docs/architecture.md` | OpenAI key 仍保持 server-only；当前不发真实网络请求 |
-| 导出功能 | Phase 4 已建立服务端导出 manifest 边界；真实 zip/静态包下载尚未实现 | `src/server/export/exportService.ts` | 导出前会复用路径 allowlist 并记录 export 使用次数；当前不生成下载文件 |
-| 测试文件 | Phase 1/2/3/4 脚本级检查已实现 | `tests/phase1-scaffold.test.mjs`、`tests/phase2-workspace.test.mjs`、`tests/phase3-persistence-auth.test.mjs`、`tests/phase4-generation-preview-export.test.mjs` | 覆盖 scaffold、workspace、auth/db 基础层、Phase 4 schema/path/provider/version/export 边界；Vitest、API、E2E 测试仍未建立 |
+| 导出功能 | Phase 4 已建立服务端导出 manifest 和导出记录持久化边界；真实 zip/静态包下载尚未实现 | `src/server/export/exportService.ts`、`src/server/export/exportRepository.ts` | 导出前会复用路径 allowlist，并记录 export 使用次数和 export record；当前不生成下载文件 |
+| 测试文件 | Phase 1/2/3/4 脚本级检查已实现 | `tests/phase1-scaffold.test.mjs`、`tests/phase2-workspace.test.mjs`、`tests/phase3-persistence-auth.test.mjs`、`tests/phase4-generation-preview-export.test.mjs`、`tests/phase4-persistence-records.test.mjs` | 覆盖 scaffold、workspace、auth/db 基础层、Phase 4 schema/path/provider/version/export/persistence 边界；Vitest、API、E2E 测试仍未建立 |
 | README / 文档 | 架构和项目状态文档已同步 Phase 4 基础层 | `README.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | requirements 和 PRD 范围未变化；README 尚可在后续真实运行能力接入后继续更新 |
 | 环境变量配置 | 示例已补充 Supabase Auth、Supabase database、OpenAI 占位 | `.env.example` | 不包含真实密钥；真实 `.env` 仍应本地私有 |
 | Git / GitHub / Issue 管理 | 远程已配置；Issue #2 已关闭；本地已有 Phase 2 单文件 commits | `.git/` | `origin` 指向 `https://github.com/GUANXIPENG/claude-design.git`；当前分支尚未 push |
@@ -76,9 +77,9 @@
 | 数据库 schema | UserProfile、Project、Page、ProjectVersion、ConversationMessage、GenerationRequest、GenerationResult、ExportRecord、Quota 最小 schema 和本地 migration/RLS SQL 已建立 | 项目持久化、版本和额度记录可继续落地 | 否，schema 和本地 SQL 基础层已解除；真实 Supabase 执行与跨用户 RLS 验证仍阻塞生产落地 | Phase 3/Issue #6 已完成基础层，后续执行真实 migration/RLS 验证 |
 | Drizzle ORM | 已安装 Drizzle 依赖、配置 `drizzle.config.ts`，并新增 server db client 与本地初始 migration SQL | 架构基线要求类型化数据访问 | 否，基础层已解除；真实 Supabase 迁移执行仍未完成 | Phase 3/Issue #6 已完成基础层，后续执行真实 migration |
 | 多页面项目生成 | Phase 4 mock provider 可返回多页面项目结构；真实 OpenAI 生成和数据库保存未实现 | MVP 不应只生成单页面 | 是 | Phase 4 后续 |
-| 项目级版本快照 | Phase 4 已实现快照和 rollback 数据边界；历史列表 UI、数据库写入和真实回退闭环未实现 | 用户无法在真实项目中撤回不满意结果 | 是 | Phase 4 后续 |
+| 项目级版本快照 | Phase 4 已实现快照、数据库写入和 rollback 数据边界；历史列表 UI、真实回退闭环和远程数据库验证未实现 | 用户暂时无法在 UI 中撤回不满意结果 | 是 | Phase 4 后续 |
 | 点击选择后局部修改 | 工作台已展示 Selection context 基础状态；真实预览点击识别、选区高亮和局部修改闭环未实现 | PRD 核心差异化能力之一 | 是 | Phase 4 后续 |
-| 导出功能 | Phase 4 已建立导出 manifest 服务边界；静态文件 zip、可编辑项目结构下载和导出记录持久化仍未实现 | 用户还无法真正下载生成结果 | 是 | Phase 4 后续 |
+| 导出功能 | Phase 4 已建立导出 manifest 服务边界和导出记录持久化；静态文件 zip、可编辑项目结构下载仍未实现 | 用户还无法真正下载生成结果 | 是 | Phase 4 后续 |
 | 额度限制 | 已建立 quota schema 和 `recordQuotaUsage` 基础记录服务；额度提示、限制和扣减策略未实现 | 成本控制和未来商业化需要基础记录 | 否，基础记录边界已建立；真实限制逻辑仍需后续补齐 | Phase 3 已完成基础记录，Phase 4/5 补限制与 UI |
 | 部署配置 | Vercel 配置、环境变量、构建脚本缺失 | 无法部署预览或生产环境 | 是，部署前阻塞 | Phase 5 |
 | 测试覆盖 | Phase 1/2/3/4 脚本检查已建立；Supabase migration/RLS 文件检查已补；Vitest、schema fixtures、API 测试、Playwright 未建立 | 目前能验证 scaffold、前端壳、Auth/DB 基础层、Phase 4 服务边界和 RLS SQL 存在性；仍无法验证真实远程 RLS 行为、API 和 E2E | 是，至少最小业务/安全测试阻塞可发布 MVP | Phase 5 |
@@ -608,3 +609,31 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 
 - 在真实 Supabase 项目执行 `drizzle/0001_initial_schema.sql` 和 `supabase/policies/0001_project_rls.sql`。
 - 补 Issue：`feat: persist project versions and generation records`，把 Phase 4 版本快照、生成记录和导出记录写入数据库服务层。
+
+## 16. 2026-05-13 Phase 4 持久化服务边界开发更新
+
+本次实施计划：`feat: persist project versions and generation records`。GitHub Issue 创建因当前 GitHub connector 返回 403 被阻塞，Issue 待创建；本地开发分支为 `feat/issue-pending-persist-generation-records`。
+
+已完成内容：
+
+- 新增 generation request/result 持久化 repository，记录 running、succeeded、failed 状态和校验结果。
+- 新增 project version 持久化 repository，生成成功后写入 `project_versions` 并更新 `projects.current_version_id`。
+- 新增 conversation message repository，生成成功后记录用户 prompt 和 assistant summary，并关联成功版本。
+- 新增 export record repository，导出 manifest 准备成功后写入 `export_records`。
+- 更新 generation service：provider 或 schema/path 校验失败时只记录 failed result，不更新当前版本。
+- 更新 export service：继续准备安全 manifest，同时记录导出行为和 quota。
+- 新增 `tests/phase4-persistence-records.test.mjs` 并接入 `npm.cmd run test`。
+
+本次未实现：
+
+- 未接入真实 OpenAI Responses API provider。
+- 未接入 Sandpack runtime。
+- 未实现 zip 下载或静态包产物。
+- 未执行真实 Supabase migration/RLS 远程验证。
+- 未创建 GitHub Issue，原因是当前 connector 权限不足。
+
+下一步建议：
+
+- 在 GitHub 上补建对应 Issue，并把本地分支关联到该 Issue。
+- 进入下一阶段 Issue：`feat: connect openai responses provider`。
+- 在真实 Supabase 项目执行 migration/RLS 后，用真实数据库验证版本、生成、对话、导出和额度记录写入。

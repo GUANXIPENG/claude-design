@@ -1,10 +1,10 @@
 # 项目状态文档
 
-最后更新：2026-05-09
+最后更新：2026-05-14
 
 ## 1. 当前项目阶段
 
-当前项目处于：**Phase 4 生成、版本与导出基础层已完成，Supabase migration/RLS 本地文件已补齐，版本/生成/导出记录持久化服务边界已补齐，等待真实 Supabase 执行验证、真实 OpenAI、Sandpack runtime 和导出打包落地**。
+当前项目处于：**Phase 4 生成、版本与导出基础层已完成，Supabase migration/RLS 本地文件与真实远程验证已完成，版本/生成/导出记录持久化服务边界已补齐，等待真实 OpenAI、Sandpack runtime 和导出打包落地**。
 
 理由：
 
@@ -15,10 +15,10 @@
 - 当前已实现 fixture/mock 驱动的前端工作台闭环，并新增 Supabase Auth 服务端边界、Drizzle 最小 schema、受保护项目/工作台路由、项目归属服务边界和基础额度记录 schema。
 - 当前已新增 Phase 4 的生成输出 schema、路径安全校验、mock AI provider、生成/迭代编排、版本快照/回退数据边界、导出 manifest 边界和工作台 Phase 4 状态入口。
 - 当前已新增 Supabase 初始 schema migration SQL 和项目归属 RLS policy SQL。
-- 当前仍未实现真实 OpenAI 网络调用、真实 Sandpack runtime、导出 zip 下载、真实数据库 migration/RLS 远程执行验证和生产部署配置。
+- 当前仍未实现真实 OpenAI 网络调用、真实 Sandpack runtime、导出 zip 下载和生产部署配置。
 - 当前已新增版本快照、generation request/result、conversation message 和 export record 的 Drizzle 持久化服务边界；在未配置数据库时保持 no-op，便于本地脚本验证。
 
-因此，当前重点应从 Phase 4 基础边界转向真实 Supabase migration/RLS 执行验证、版本/导出持久化、真实 OpenAI provider、Sandpack 受控预览和最终导出打包。
+因此，当前重点应从 Phase 4 基础边界转向真实 OpenAI provider、Sandpack 受控预览、最终导出打包和 Supabase RLS 性能优化。
 
 ## 2. 当前已经完成的内容
 
@@ -74,15 +74,15 @@
 | Sandpack 预览 | Phase 2 静态预览和代码视图已实现；真实 Sandpack 沙盒未接入 | MVP 最终需要受控运行生成文件 | 是 | Phase 4 |
 | 真实 AI 生成逻辑 | Phase 4 已实现 prompt、Zod generation schema、mock provider 和服务端编排；真实 OpenAI Responses API 网络调用未实现 | 产品核心能力依赖真实模型调用 | 是 | Phase 4 后续 |
 | Supabase Auth | 服务端会话边界、登录/退出 action、受保护路由已建立；真实 Supabase 项目配置后可验证完整登录闭环 | 项目归属和私有项目依赖账号 | 否，基础层已解除；真实环境配置和 RLS 仍是上线前阻塞 | Phase 3 已完成基础层，后续补配置验证 |
-| 数据库 schema | UserProfile、Project、Page、ProjectVersion、ConversationMessage、GenerationRequest、GenerationResult、ExportRecord、Quota 最小 schema 和本地 migration/RLS SQL 已建立 | 项目持久化、版本和额度记录可继续落地 | 否，schema 和本地 SQL 基础层已解除；真实 Supabase 执行与跨用户 RLS 验证仍阻塞生产落地 | Phase 3/Issue #6 已完成基础层，后续执行真实 migration/RLS 验证 |
-| Drizzle ORM | 已安装 Drizzle 依赖、配置 `drizzle.config.ts`，并新增 server db client 与本地初始 migration SQL | 架构基线要求类型化数据访问 | 否，基础层已解除；真实 Supabase 迁移执行仍未完成 | Phase 3/Issue #6 已完成基础层，后续执行真实 migration |
+| 数据库 schema | UserProfile、Project、Page、ProjectVersion、ConversationMessage、GenerationRequest、GenerationResult、ExportRecord、Quota 最小 schema、本地 migration/RLS SQL 和真实 Supabase 远程验证已完成 | 项目持久化、版本和额度记录可继续落地 | 否，schema、RLS 和远程验证基础层已解除；后续仍需接真实业务写入闭环 | Phase 3/Issue #6 与 Issue #13 已完成基础层和远程验证 |
+| Drizzle ORM | 已安装 Drizzle 依赖、配置 `drizzle.config.ts`，并新增 server db client、本地初始 migration SQL 与真实 Supabase 执行验证 | 架构基线要求类型化数据访问 | 否，基础层和真实 Supabase 迁移执行已完成 | Phase 3/Issue #6 与 Issue #13 已完成 |
 | 多页面项目生成 | Phase 4 mock provider 可返回多页面项目结构；真实 OpenAI 生成和数据库保存未实现 | MVP 不应只生成单页面 | 是 | Phase 4 后续 |
 | 项目级版本快照 | Phase 4 已实现快照、数据库写入和 rollback 数据边界；历史列表 UI、真实回退闭环和远程数据库验证未实现 | 用户暂时无法在 UI 中撤回不满意结果 | 是 | Phase 4 后续 |
 | 点击选择后局部修改 | 工作台已展示 Selection context 基础状态；真实预览点击识别、选区高亮和局部修改闭环未实现 | PRD 核心差异化能力之一 | 是 | Phase 4 后续 |
 | 导出功能 | Phase 4 已建立导出 manifest 服务边界和导出记录持久化；静态文件 zip、可编辑项目结构下载仍未实现 | 用户还无法真正下载生成结果 | 是 | Phase 4 后续 |
 | 额度限制 | 已建立 quota schema 和 `recordQuotaUsage` 基础记录服务；额度提示、限制和扣减策略未实现 | 成本控制和未来商业化需要基础记录 | 否，基础记录边界已建立；真实限制逻辑仍需后续补齐 | Phase 3 已完成基础记录，Phase 4/5 补限制与 UI |
 | 部署配置 | Vercel 配置、环境变量、构建脚本缺失 | 无法部署预览或生产环境 | 是，部署前阻塞 | Phase 5 |
-| 测试覆盖 | Phase 1/2/3/4 脚本检查已建立；Supabase migration/RLS 文件检查已补；Vitest、schema fixtures、API 测试、Playwright 未建立 | 目前能验证 scaffold、前端壳、Auth/DB 基础层、Phase 4 服务边界和 RLS SQL 存在性；仍无法验证真实远程 RLS 行为、API 和 E2E | 是，至少最小业务/安全测试阻塞可发布 MVP | Phase 5 |
+| 测试覆盖 | Phase 1/2/3/4 脚本检查已建立；Supabase migration/RLS 文件检查和真实远程 RLS 行为验证已完成；Vitest、schema fixtures、API 测试、Playwright 未建立 | 目前能验证 scaffold、前端壳、Auth/DB 基础层、Phase 4 服务边界、RLS SQL 存在性和真实远程 RLS 隔离；仍缺 API 和 E2E | 是，至少最小业务/安全测试仍阻塞可发布 MVP | Phase 5 |
 
 ## 4. 已知问题和阻塞点
 
@@ -91,7 +91,7 @@
 | 问题描述 | 影响范围 | 可能原因 | 建议解决方式 | 优先级 |
 |---|---|---|---|---|
 | Codex 环境中 `npm run dev` 返回 `spawn EPERM` | 无法在当前沙箱内验证 Next dev server | Next dev 内部使用 `child_process.fork`，当前环境限制 spawn | 在普通本机终端复验 `npm run dev`；当前以 build + `next start` HTTP 验收替代 | P1 |
-| 真实业务页面持久化闭环未完成 | 项目列表已接服务端持久化读取边界，本地 migration/RLS 文件已补齐，但还没有真实项目创建 UI、真实 Supabase 执行和远程数据库验证 | Phase 3/Issue #6 只完成基础层，尚未完成端到端项目创建 | 下一步执行并验证 Supabase migration/RLS，并补最小项目创建流程 | P0 |
+| 真实业务页面持久化闭环未完成 | 项目列表已接服务端持久化读取边界，本地 migration/RLS 文件和真实 Supabase 远程验证已完成，但还没有真实项目创建 UI | Phase 3/Issue #6 和 Issue #13 已完成数据库基础层，尚未完成端到端项目创建 | 下一步补最小项目创建流程，并继续接真实生成/保存入口 | P0 |
 | 真实 AI/Sandpack/导出未完整接入 | MVP 核心生成、预览运行和交付能力仍不可完整使用 | Phase 4 已完成基础边界；真实 OpenAI、Sandpack runtime、zip 导出和持久化闭环尚未接入 | 按后续 Issue 接入真实 provider、受控预览、版本/导出持久化和下载能力 | P0 |
 
 ### 4.2 高优先级问题
@@ -100,7 +100,7 @@
 |---|---|---|---|---|
 | AI 生成逻辑未完整接入 | 产品核心能力仍不可真实调用 | Phase 4 已有 mock provider、schema 和服务编排；真实 OpenAI provider 尚未接入 | 用真实 OpenAI Responses API provider 替换 mock provider，并保留 schema/path 校验 | P1 |
 | Supabase Auth 真实环境未验证 | 服务端边界已建立，但没有真实 Supabase 项目配置时无法完成登录闭环 | 缺少真实环境变量和 Supabase 项目 | 配置 Supabase Auth 后复验 magic link 登录、退出和受保护路由 | P1 |
-| 数据库 migration / RLS 未远程验证 | 本地 migration SQL 和 RLS policy SQL 已建立，但尚未在真实 Supabase 项目执行和验证 | 当前环境没有真实 Supabase 项目连接 | 在 Supabase 执行 migration/RLS，并验证跨用户隔离 | P1 |
+| Supabase RLS 性能优化未完成 | 真实 Supabase migration/RLS 已执行并通过隔离验证，但 performance advisor 提示 `auth_rls_initplan` WARN | 当前 policy 多处直接调用 `auth.uid()`，规模化查询时可能重复执行 | 通过 Issue #14 将适用 policy 优化为 `(select auth.uid())` 并复跑 advisor | P1 |
 | Sandpack 预览未接入 | 当前只能静态预览 fixture，无法运行生成项目文件 | Phase 2 只实现前端壳和代码视图 | Phase 4 接 Sandpack 和 AI 结果 | P1 |
 | 版本快照和回退未完整实现 | 修改风险高，用户还无法在真实项目中撤销 | Phase 4 已有项目级快照和 rollback 数据边界；数据库写入和 UI 历史弹窗尚未接入 | 将版本服务接入 Supabase，并补历史版本 UI 和回退确认 | P1 |
 | 导出功能未完整实现 | 用户无法保存或交付生成结果 | Phase 4 已有服务端导出 manifest；zip/下载和导出记录持久化尚未接入 | 基于当前 manifest 实现静态包/可编辑项目结构下载 | P1 |

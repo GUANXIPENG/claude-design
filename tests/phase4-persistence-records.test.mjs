@@ -87,6 +87,7 @@ assert.match(exportService, /versionId/);
 
 const projectStatus = readText("docs/PROJECT_STATUS.md");
 assert.match(projectStatus, /persist project versions and generation records/);
-assert.match(projectStatus, /Issue 待创建/);
+assert.match(projectStatus, /Issue #13/);
+assert.match(projectStatus, /Issue #14/);
 
 console.log("Phase 4 persistence record checks passed.");

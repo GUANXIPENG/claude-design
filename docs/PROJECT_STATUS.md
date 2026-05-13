@@ -24,7 +24,7 @@
 
 | 模块 | 当前状态 | 相关文件 | 备注 |
 |---|---|---|---|
-| 项目初始化 | Git 仓库已存在，当前开发分支为 `feat-issue-6-supabase-migration-rls`，远程 `origin` 已配置 | `.git/` | Issue #6 用于补 Supabase migration/RLS；历史 Issue #2/#3/#4/#5 已完成 |
+| 项目初始化 | Git 仓库已存在，当前工作分支为 `test/issue-13-supabase-remote-rls-verify`，远程 `origin` 已配置 | `.git/` | Issue #6 已补 Supabase migration/RLS；Issue #13 已完成真实远程验证 |
 | 需求文档 | 已完成第一版产品需求梳理 | `docs/requirements.md` | 覆盖产品定位、MVP/P1/P2、功能需求、非功能需求、导出、多页面、对话修改、局部修改、版本、账号、额度、风险 |
 | PRD | 已完成结构化 PRD | `docs/PRD.md` | 覆盖用户角色、用户流程、页面清单、功能列表、Given/When/Then 验收标准、状态设计、视觉风格、信息架构、MVP 边界 |
 | 架构草案 | 已完成技术栈锁定与架构基线 | `docs/architecture.md` | 锁定 Next.js、TypeScript、Tailwind、Supabase、Drizzle、OpenAI Responses API、Zod、Sandpack、Vercel、Vitest、Playwright 等方向 |
@@ -32,7 +32,7 @@
 | 对话输入区 | Phase 2 mock 输入区已实现 | `src/features/workspace/components/WorkspacePage.tsx` | 支持草稿、空输入提示、生成中和成功占位状态；不触发真实 AI |
 | 生成结果展示区 | Phase 2 fixture 预览和代码视图已实现 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | 展示 fixture 页面内容和文件内容；不是真实生成结果 |
 | live preview / code view | 代码视图和静态预览已实现；真实 Sandpack 未接入 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | Sandpack 仍只在架构文档中作为后续技术基线 |
-| 项目历史 / 本地存储 | 已建立数据结构和服务端持久化边界 | `src/server/db/schema.ts`、`src/server/versions/versionRepository.ts` | 已有 `project_versions` 最小 schema 和版本写入服务；版本历史 UI、真实回退闭环和远程数据库验证仍未实现 |
+| 项目历史 / 本地存储 | 已建立数据结构和服务端持久化边界 | `src/server/db/schema.ts`、`src/server/versions/versionRepository.ts` | 已有 `project_versions` 最小 schema 和版本写入服务；版本历史 UI 和真实回退闭环仍未实现 |
 | API route / Server Actions | Phase 3 认证入口已实现 | `src/app/auth/callback/route.ts`、`src/server/auth/actions.ts` | 仅包含 Supabase Auth callback、登录和退出；生成、保存、导出 API 尚未实现 |
 | OpenAI 调用预留 | Phase 4 已建立服务端 provider adapter 和 mock provider；真实 OpenAI Responses API 尚未接入 | `src/server/ai/provider.ts`、`src/prompts/generation.ts`、`docs/architecture.md` | OpenAI key 仍保持 server-only；当前不发真实网络请求 |
 | 导出功能 | Phase 4 已建立服务端导出 manifest 和导出记录持久化边界；真实 zip/静态包下载尚未实现 | `src/server/export/exportService.ts`、`src/server/export/exportRepository.ts` | 导出前会复用路径 allowlist，并记录 export 使用次数和 export record；当前不生成下载文件 |
@@ -73,11 +73,11 @@
 | 生成结果展示区 | Phase 2 fixture 页面清单、预览和代码视图已实现；真实 AI 文件树未接入 | 可展示 mock 生成结果，后续需接 schema 校验后的 AI 输出 | 否，前端壳已解除；真实生成仍阻塞 MVP | Phase 4 |
 | Sandpack 预览 | Phase 2 静态预览和代码视图已实现；真实 Sandpack 沙盒未接入 | MVP 最终需要受控运行生成文件 | 是 | Phase 4 |
 | 真实 AI 生成逻辑 | Phase 4 已实现 prompt、Zod generation schema、mock provider 和服务端编排；真实 OpenAI Responses API 网络调用未实现 | 产品核心能力依赖真实模型调用 | 是 | Phase 4 后续 |
-| Supabase Auth | 服务端会话边界、登录/退出 action、受保护路由已建立；真实 Supabase 项目配置后可验证完整登录闭环 | 项目归属和私有项目依赖账号 | 否，基础层已解除；真实环境配置和 RLS 仍是上线前阻塞 | Phase 3 已完成基础层，后续补配置验证 |
+| Supabase Auth | 服务端会话边界、登录/退出 action、受保护路由已建立；真实 Supabase 项目配置后可验证完整登录闭环 | 项目归属和私有项目依赖账号 | 否，基础层已解除；真实登录环境配置仍需复验 | Phase 3 已完成基础层，后续补配置验证 |
 | 数据库 schema | UserProfile、Project、Page、ProjectVersion、ConversationMessage、GenerationRequest、GenerationResult、ExportRecord、Quota 最小 schema、本地 migration/RLS SQL 和真实 Supabase 远程验证已完成 | 项目持久化、版本和额度记录可继续落地 | 否，schema、RLS 和远程验证基础层已解除；后续仍需接真实业务写入闭环 | Phase 3/Issue #6 与 Issue #13 已完成基础层和远程验证 |
 | Drizzle ORM | 已安装 Drizzle 依赖、配置 `drizzle.config.ts`，并新增 server db client、本地初始 migration SQL 与真实 Supabase 执行验证 | 架构基线要求类型化数据访问 | 否，基础层和真实 Supabase 迁移执行已完成 | Phase 3/Issue #6 与 Issue #13 已完成 |
 | 多页面项目生成 | Phase 4 mock provider 可返回多页面项目结构；真实 OpenAI 生成和数据库保存未实现 | MVP 不应只生成单页面 | 是 | Phase 4 后续 |
-| 项目级版本快照 | Phase 4 已实现快照、数据库写入和 rollback 数据边界；历史列表 UI、真实回退闭环和远程数据库验证未实现 | 用户暂时无法在 UI 中撤回不满意结果 | 是 | Phase 4 后续 |
+| 项目级版本快照 | Phase 4 已实现快照、数据库写入和 rollback 数据边界；历史列表 UI 和真实回退闭环未实现 | 用户暂时无法在 UI 中撤回不满意结果 | 是 | Phase 4 后续 |
 | 点击选择后局部修改 | 工作台已展示 Selection context 基础状态；真实预览点击识别、选区高亮和局部修改闭环未实现 | PRD 核心差异化能力之一 | 是 | Phase 4 后续 |
 | 导出功能 | Phase 4 已建立导出 manifest 服务边界和导出记录持久化；静态文件 zip、可编辑项目结构下载仍未实现 | 用户还无法真正下载生成结果 | 是 | Phase 4 后续 |
 | 额度限制 | 已建立 quota schema 和 `recordQuotaUsage` 基础记录服务；额度提示、限制和扣减策略未实现 | 成本控制和未来商业化需要基础记录 | 否，基础记录边界已建立；真实限制逻辑仍需后续补齐 | Phase 3 已完成基础记录，Phase 4/5 补限制与 UI |
@@ -120,6 +120,8 @@
 | 项目边界文档未单独存在 | 新开发者需要从多份文档拼上下文 | 需求、PRD、架构已分散覆盖边界 | 如后续需要，可新增独立边界文档或在 README 汇总 | P3 |
 
 ## 5. 下一步开发计划
+
+本节保留原阶段路线结构；Phase 1、Phase 2、Phase 3，以及 Phase 4 后续细分路线中的第 1、2 项已经完成，不再作为当前待办。当前实际下一步以第 3 项之后的真实 OpenAI、生成入口、Sandpack、版本 UI、导出 zip 和测试加固为主。
 
 ### Phase 1：恢复可运行环境
 
@@ -254,12 +256,12 @@
 
 ### Phase 4 后续细分路线
 
-Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等于完整产品闭环。后续必须按以下顺序拆分 Issue，避免在真实模型、预览、数据库和导出之间互相污染边界。
+Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等于完整产品闭环。下表保留原拆分顺序；第 1 项 Supabase migration/RLS 和第 2 项持久化服务边界已经完成，当前不再作为待办。
 
 | 顺序 | 建议 Issue 标题 | 目标 | 非目标 | 验收标准 | 必跑检查 |
 |---|---|---|---|---|---|
-| 1 | `feat: add supabase migration and rls policies` | 生成并验证数据库 migration 与 RLS policy，覆盖 projects、pages、versions、messages、generation、export、quota 表 | 不接真实 OpenAI；不改工作台 UI；不做团队权限 | migration 文件存在；RLS policy 明确按 `owner_id` / 用户归属隔离；文档说明本地和远程执行步骤 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint` |
-| 2 | `feat: persist project versions and generation records` | 将 Phase 4 的版本快照、generation request/result、conversation message 写入 Supabase/Drizzle 服务层 | 不接 Sandpack；不做 zip 导出；不做复杂版本 diff | generate/iterate 成功后能形成数据库版本记录；失败不覆盖当前版本；服务端不信任前端 userId | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、必要 schema/service 测试 |
+| 1 | `feat: add supabase migration and rls policies` | 已完成：生成本地数据库 migration 与 RLS policy，并在真实 Supabase 项目验证 projects、pages、versions、messages、generation、export、quota 表隔离 | 不接真实 OpenAI；不改工作台 UI；不做团队权限 | migration 文件存在；RLS policy 明确按 `owner_id` / 用户归属隔离；真实远程验证通过 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint` |
+| 2 | `feat: persist project versions and generation records` | 已完成：将 Phase 4 的版本快照、generation request/result、conversation message、export record 写入 Supabase/Drizzle repository 边界 | 不接 Sandpack；不做 zip 导出；不做复杂版本 diff | generate/iterate 成功后可形成数据库版本记录；失败不覆盖当前版本；服务端不信任前端 userId | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、必要 schema/service 测试 |
 | 3 | `feat: connect openai responses provider` | 用真实 OpenAI Responses API provider 替换 mock provider，并保留 `AiProvider` 接口、Zod 校验和路径 allowlist | 不把 OpenAI SDK 放进前端；不放宽文件 allowlist；不实现 streaming UI | 服务端读取 `OPENAI_API_KEY`；provider 原始错误脱敏；AI 输出必须通过 schema 才能返回 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、`npm.cmd run build` |
 | 4 | `feat: expose generation route and workspace submit flow` | 新增服务端生成入口，把工作台提交从 fixture 状态接到服务端 generate/iterate flow | 不接 Sandpack runtime；不做真实下载；不做任意框选 | 空输入不能触发请求；未登录不能生成；生成中/失败/成功状态清晰；失败保留旧版本 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、`npm.cmd run build` |
 | 5 | `feat: add sandpack preview runtime` | 将通过 schema 校验的受控文件树载入 Sandpack 预览，并显示运行错误 | 不允许任意依赖安装；不允许真实后端执行；不开放不受控网络访问 | Sandpack 只运行 allowlist 文件；运行错误可见；代码视图与当前版本一致 | `npm.cmd run test`、`npm.cmd run typecheck`、`npm.cmd run lint`、`npm.cmd run build`，必要时 Playwright 截图检查 |
@@ -384,26 +386,26 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 
 ## 8. 当前代码质量评价
 
-当前已有 Phase 1 scaffold、Phase 2 fixture/mock 前端代码、Phase 3 认证/持久化基础层，以及 Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界和本地 Supabase migration/RLS 文件。以下评价聚焦当前工程状态：前端壳已可运行，服务端 Auth/DB/schema/AI 输出校验边界已建立，本地 migration/RLS SQL 已补齐；真实 OpenAI、Sandpack runtime、导出 zip、版本回退 UI、真实 Supabase 执行/跨用户 RLS 验证和生产部署配置仍未实现。
+当前已有 Phase 1 scaffold、Phase 2 fixture/mock 前端代码、Phase 3 认证/持久化基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、本地 Supabase migration/RLS 文件和真实 Supabase 远程 RLS 验证。以下评价聚焦当前工程状态：前端壳已可运行，服务端 Auth/DB/schema/AI 输出校验边界已建立，真实 OpenAI、Sandpack runtime、导出 zip、版本回退 UI、生成 route / Server Action、生产部署配置仍未实现。
 
 | 评价维度 | 当前评价 | 真实问题 |
 |---|---|---|
 | 目录结构是否清晰 | 已建立 `src/app`、`src/features`、`src/lib/fixtures`、`src/server/auth`、`src/server/db`、`src/server/projects`、`src/server/quota`、`src/server/ai`、`src/server/generation`、`src/server/export`、`src/server/versions` 和 `src/prompts` 等结构 | 后续需要把 mock provider、版本和导出边界接入真实 OpenAI、数据库持久化和 Sandpack |
 | 前后端边界是否清晰 | Phase 3 已把 Auth、DB、project ownership 和 quota 基础记录放在 server 侧；Phase 4 已把 AI provider、输出校验、版本和导出 manifest 放在 server 侧 | 后续接真实 OpenAI/Sandpack/导出下载时仍需继续验证 server-only 边界 |
-| 服务端逻辑是否安全 | Auth 和项目归属基础边界已建立；Phase 4 已增加 AI 输出 schema、路径 allowlist、版本快照和导出 manifest 校验 | 仍需真实 Supabase RLS、migration、日志脱敏、真实 OpenAI 错误脱敏和导出权限持久化校验 |
+| 服务端逻辑是否安全 | Auth 和项目归属基础边界已建立；Phase 4 已增加 AI 输出 schema、路径 allowlist、版本快照、导出 manifest 校验和真实 Supabase RLS 验证 | 仍需 RLS 性能优化、日志脱敏复验、真实 OpenAI 错误脱敏和导出权限持久化校验 |
 | 组件是否过大 | 当前组件规模可接受 | `WorkspacePage` 后续接真实 Sandpack、版本、导出时需要继续拆分 |
 | 状态管理是否合理 | 当前只用 React 本地状态处理页面选择、草稿和 mock 生成状态 | 真实项目数据仍需服务端/数据库作为主数据源 |
 | 类型定义是否完整 | 已有 fixture 类型、Zod project/quota schema、Drizzle 数据库 schema、Phase 4 generation schema 和版本快照 schema | 仍缺真实 OpenAI response fixture、API route schema 和 zip 导出 fixture 测试 |
 | 错误处理是否充分 | 登录页可提示 Supabase 配置缺失；Phase 2 覆盖空输入和 mock 状态提示 | 尚未覆盖真实网络、AI、保存、权限、导出失败 |
-| 测试是否足够 | 已有 Phase 1/2/3/4 脚本检查 | 仍缺 Vitest、Playwright、API 集成测试、真实 OpenAI mock fixture、RLS 验证和安全测试 |
-| 是否存在明显重构点 | 下一步重点是从 Phase 4 基础边界转向真实 OpenAI、Sandpack runtime、Supabase 持久化和导出 zip | 需要避免 mock provider 和工作台 fixture 被误认为真实生成/预览能力 |
+| 测试是否足够 | 已有 Phase 1/2/3/4 脚本检查和真实 Supabase RLS 验证 | 仍缺 Vitest、Playwright、API 集成测试、真实 OpenAI mock fixture、RLS 性能优化复验和安全测试 |
+| 是否存在明显重构点 | 下一步重点是从 Phase 4 基础边界转向真实 OpenAI、Sandpack runtime、生成入口和导出 zip | 需要避免 mock provider 和工作台 fixture 被误认为真实生成/预览能力 |
 
 ### 当前代码质量结论
 
-- 文档质量较完整，已经同步 Phase 4 基础层，并继续指导后续真实 OpenAI、Sandpack runtime、Supabase migration/RLS 与导出打包。
+- 文档质量较完整，已经同步 Phase 4 基础层和真实 Supabase migration/RLS 验证，并继续指导后续真实 OpenAI、Sandpack runtime、RLS 性能优化与导出打包。
 - 工程已有可运行 scaffold、Phase 2 前端壳、Phase 3 认证/持久化基础层和 Phase 4 生成/版本/导出服务边界。
 - 不应把 Phase 2 fixture 或 Phase 4 mock provider 误认为真实 AI、Sandpack、导出下载或版本回退闭环；项目列表已不再使用 fixture 作为生产数据源。
-- 下一步最重要的是执行并验证真实 Supabase migration/RLS、接入版本/导出持久化、真实 OpenAI provider 和 Sandpack 受控预览。
+- 下一步最重要的是接入真实 OpenAI provider、生成 route / Server Action、Sandpack 受控预览、版本历史 UI、导出 zip 和 RLS 性能优化。
 
 ## 9. 持续更新规则
 
@@ -507,7 +509,7 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 - 未接入真实 OpenAI 生成、AI structured output、prompt 模板或 provider adapter。
 - 未接入 Sandpack 运行时预览。
 - 未实现导出打包、导出下载、版本回退 UI 或真实版本历史页面。
-- 当时未创建真实 Supabase migration 文件，未在远程数据库执行 schema，未配置 RLS policy；当前本地 SQL/RLS 文件已在 Issue #6 补齐，真实远程执行仍未完成。
+- 当时未创建真实 Supabase migration 文件，未在远程数据库执行 schema，未配置 RLS policy；后续已由 Issue #6 补齐本地 SQL/RLS 文件，并由 Issue #13 完成真实远程执行和跨用户 RLS 验证。
 - 未实现真实项目创建 UI；项目列表现在读取服务端持久化边界，未配置数据库或未创建项目时显示空状态。
 - 未接入真实订阅、支付或额度扣减策略；当前只建立操作次数记录边界。
 
@@ -519,11 +521,11 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 当前仍存在的环境限制：
 
 - 没有真实 Supabase 项目和数据库连接时，登录和项目读取只能验证服务端边界与配置缺失提示，无法完成真实用户会话闭环。
-- 真实上线前必须创建 Drizzle migration、执行数据库变更，并配置 Supabase RLS，确保项目、页面、版本、对话、导出和额度记录按用户隔离。
+- 真实上线前仍需复验 Supabase Auth 登录闭环；Drizzle migration、远程数据库变更和 Supabase RLS 已在后续 Issue 中完成基础验证。
 
 下一阶段建议：
 
-- 补 Issue：创建并验证 Supabase migration 与 RLS policy。
+- Supabase migration 与 RLS policy 已在后续 Issue 中补齐并完成远程验证。
 - 补 Issue：实现最小项目创建流程，把真实项目写入 `projects` 和 `pages`。
 - Phase 4 已补 AI 输出 schema、路径 allowlist 和版本快照/导出边界测试；下一步接真实 provider、Sandpack runtime、持久化和 zip 导出。
 
@@ -551,7 +553,7 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 - 未接入真实 Sandpack runtime 或错误 overlay；工作台预览仍使用 fixture。
 - 未把版本快照、生成记录或导出记录写入真实数据库。
 - 未生成 zip 下载或静态包文件；当前导出服务只准备安全 manifest。
-- 当时未创建 Supabase migration 或 RLS policy；当前本地 SQL/RLS 文件已在 Issue #6 补齐，真实远程执行仍未完成。
+- 当时未创建 Supabase migration 或 RLS policy；后续已由 Issue #6 补齐本地 SQL/RLS 文件，并由 Issue #13 完成真实远程执行和跨用户 RLS 验证。
 
 当前仍存在的环境限制：
 
@@ -562,7 +564,7 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 
 - 补 Issue：接入真实 OpenAI Responses API provider，并保留当前 `AiProvider` 接口和 schema 校验。
 - 补 Issue：接入 Sandpack，把通过校验的文件树载入受控预览。
-- 补 Issue：将版本快照、生成记录、导出记录写入 Supabase，并基于 Issue #6 的 migration/RLS 文件执行真实数据库验证。
+- 版本快照、生成记录、对话记录和导出记录持久化边界已在后续改动中补齐；真实数据库 schema/RLS 验证已由 Issue #13 完成。
 - 补 Issue：实现导出 zip / 静态包下载。
 
 ## 14. 2026-05-09 Phase 4 后续路线拆分
@@ -579,14 +581,14 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 
 - 未接真实 OpenAI。
 - 未接 Sandpack runtime。
-- 未执行 Supabase migration/RLS。
-- 未实现数据库持久化、zip 导出或 E2E。
+- 当时未执行 Supabase migration/RLS；后续已由 Issue #13 完成。
+- 当时未实现数据库持久化、zip 导出或 E2E；后续已补齐持久化服务边界，zip 导出和 E2E 仍未完成。
 
 下一步建议：
 
 - 创建 Issue：`feat: add supabase migration and rls policies`。
 - 基于该 Issue 新建独立分支。
-- 先补本地 migration/RLS 文件与验证脚本，再进入真实 provider 或 Sandpack 开发。
+- 本地 migration/RLS 文件、验证脚本和真实远程验证已完成；下一步进入真实 provider、Sandpack 或导出下载开发。
 
 ## 15. 2026-05-09 Supabase migration/RLS 开发更新
 
@@ -601,18 +603,18 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 
 本次未实现：
 
-- 未连接真实 Supabase 项目执行 SQL。
-- 未验证真实跨用户 RLS 行为。
+- 当时远程 SQL 尚待执行；后续已由 Issue #13 在真实 Supabase 项目完成。
+- 当时未验证真实跨用户 RLS 行为；后续已由 Issue #13 完成。
 - 未改动工作台 UI、OpenAI provider、Sandpack runtime 或导出下载。
 
 下一步建议：
 
-- 在真实 Supabase 项目执行 `drizzle/0001_initial_schema.sql` 和 `supabase/policies/0001_project_rls.sql`。
+- 后续已在真实 Supabase 项目执行 `drizzle/0001_initial_schema.sql` 和 `supabase/policies/0001_project_rls.sql`，并验证跨用户隔离。
 - 补 Issue：`feat: persist project versions and generation records`，把 Phase 4 版本快照、生成记录和导出记录写入数据库服务层。
 
 ## 16. 2026-05-13 Phase 4 持久化服务边界开发更新
 
-本次实施计划：`feat: persist project versions and generation records`。GitHub Issue 创建因当前 GitHub connector 返回 403 被阻塞，Issue 待创建；本地开发分支为 `feat/issue-pending-persist-generation-records`。
+本次实施计划：`feat: persist project versions and generation records`。当时 GitHub Issue 创建因 connector 权限不足被阻塞；后续已补建真实 Supabase 验证 Issue #13，并保留持久化服务边界分支用于追踪该批改动。
 
 已完成内容：
 
@@ -629,42 +631,16 @@ Phase 4 foundation 已完成，但它只建立了服务端安全边界，不等�
 - 未接入真实 OpenAI Responses API provider。
 - 未接入 Sandpack runtime。
 - 未实现 zip 下载或静态包产物。
-- 未执行真实 Supabase migration/RLS 远程验证。
+- 当时未执行真实 Supabase migration/RLS 远程验证；后续已由 Issue #13 完成。
 - 未创建 GitHub Issue，原因是当前 connector 权限不足。
 
 下一步建议：
 
 - 在 GitHub 上补建对应 Issue，并把本地分支关联到该 Issue。
 - 进入下一阶段 Issue：`feat: connect openai responses provider`。
-- 在真实 Supabase 项目执行 migration/RLS 后，用真实数据库验证版本、生成、对话、导出和额度记录写入。
+- 在生成 route / Server Action 接入后，用真实数据库复验版本、生成、对话、导出和额度记录的端到端写入。
 
-## 17. 2026-05-13 Supabase remote migration/RLS verification attempt
-
-This follow-up created GitHub Issue #13: `test: verify remote supabase migration and rls`, and created the branch `test/issue-13-supabase-remote-rls-verify`. The target Supabase project ref is `bwpbhrbabtgotkhpouuu`.
-
-Completed:
-
-- Created Issue #13 with background, goals, non-goals, related docs, affected modules, acceptance criteria, test requirements, risks, and documentation update requirements.
-- Confirmed the GitHub CLI account has `ADMIN` permission on `GUANXIPENG/claude-design`.
-- Confirmed Supabase CLI version `2.98.2`, and checked the current `link`, `db query`, and `db push` command help before attempting remote work.
-- Attempted Supabase MCP `_list_migrations` for `bwpbhrbabtgotkhpouuu`; it returned a permission error.
-- Attempted `supabase link --project-ref bwpbhrbabtgotkhpouuu --yes`; it returned `Authorization failed for the access token and project ref pair: {"message":"Not Found"}`.
-- Re-ran the link attempt with `--debug`; the CLI requested the target project and api keys endpoints and returned the same authorization failure.
-- Checked the current process environment for Supabase/Postgres/DATABASE fallback connection variables; none were available.
-- Added `supabase/.temp/` to `.gitignore` so Supabase CLI local link metadata is not committed.
-
-Not completed:
-
-- Did not execute `drizzle/0001_initial_schema.sql` against the real Supabase project.
-- Did not execute `supabase/policies/0001_project_rls.sql` against the real Supabase project.
-- Did not run remote table, enum, index, RLS, policy, cross-user isolation, or advisor verification.
-
-Current blocker:
-
-- The current Supabase credentials cannot access project ref `bwpbhrbabtgotkhpouuu`. Both Supabase CLI and Supabase MCP report the project as unavailable or unauthorized.
-- Continue Issue #13 after logging into a Supabase account that can access `bwpbhrbabtgotkhpouuu`, or after providing a safe remote Postgres connection method for this environment.
-
-## 18. 2026-05-13 Supabase remote migration/RLS verification completed
+## 17. 2026-05-13 Supabase remote migration/RLS verification completed
 
 Issue #13 was unblocked after confirming the real Supabase project ref is `qhetmxcgwdifgkpvqrri`. The earlier value `bwpbhrbabtgotkhpouuu` is the Supabase organization ID, not a project ref.
 

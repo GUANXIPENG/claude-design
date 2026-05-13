@@ -663,3 +663,41 @@ Current blocker:
 
 - The current Supabase credentials cannot access project ref `bwpbhrbabtgotkhpouuu`. Both Supabase CLI and Supabase MCP report the project as unavailable or unauthorized.
 - Continue Issue #13 after logging into a Supabase account that can access `bwpbhrbabtgotkhpouuu`, or after providing a safe remote Postgres connection method for this environment.
+
+## 18. 2026-05-13 Supabase remote migration/RLS verification completed
+
+Issue #13 was unblocked after confirming the real Supabase project ref is `qhetmxcgwdifgkpvqrri`. The earlier value `bwpbhrbabtgotkhpouuu` is the Supabase organization ID, not a project ref.
+
+Remote target:
+
+- Project ref: `qhetmxcgwdifgkpvqrri`
+- Project name: `claude_design`
+- Organization ID: `bwpbhrbabtgotkhpouuu`
+- Region: Oceania (Sydney)
+
+Remote execution completed:
+
+- Executed `drizzle/0001_initial_schema.sql` against the linked Supabase project.
+- Executed `supabase/policies/0001_project_rls.sql` against the linked Supabase project.
+
+Remote verification completed:
+
+- MVP tables present: 9/9.
+- Enums present: 3/3.
+- Indexes present: 7/7.
+- RLS enabled tables: 9/9.
+- Policies present: 24/24.
+- Anonymous `projects` read returned 0 rows.
+- Cross-user read isolation returned only user A records across projects, pages, versions, conversation messages, generation requests, generation results, export records, and quotas.
+- Authenticated own writes succeeded across user profile, project, page, project version, conversation message, generation request/result, export record, and quota.
+- Cross-project page insert was rejected by RLS with `new row violates row-level security policy for table "pages"`.
+- Temporary auth users and test records were created inside transactions and rolled back; follow-up leak check found 0 `rls-%@example.test` auth users.
+
+Advisor results:
+
+- Supabase security advisor: no issues found.
+- Supabase performance advisor: WARN `auth_rls_initplan` for policies that call `auth.uid()` directly. Follow-up Issue #14 should optimize policies to use `(select auth.uid())` where applicable.
+
+Known operational note:
+
+- `supabase migration list --linked` failed because it requires `SUPABASE_DB_PASSWORD` for `cli_login_postgres`; remote SQL execution and verification succeeded via `supabase db query --linked`.

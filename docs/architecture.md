@@ -1066,7 +1066,7 @@ Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、�
 | 顺序 | 架构落点 | 依赖 | 必须保持的边界 |
 |---|---|---|---|
 | 1. Supabase migration/RLS | `src/server/db`、migration 文件、Supabase policy 文档 | Phase 3 Drizzle schema | 数据库层 RLS 与服务端权限校验同时存在；不信任前端 userId |
-| 2. 版本/生成记录持久化 | `src/server/versions`、`src/server/generation`、repositories | migration/RLS | 生成失败不能覆盖当前版本；rollback 必须创建新版本记录 |
+| 2. 版本/生成记录持久化 | `src/server/versions`、`src/server/generation`、repositories | migration/RLS | 已补服务端持久化边界；生成失败不能覆盖当前版本；rollback 必须创建新版本记录 |
 | 3. OpenAI Responses provider | `src/server/ai` | Phase 4 schema 和 prompt | OpenAI key server-only；provider 错误脱敏；输出必须过 Zod 和路径 allowlist |
 | 4. 生成 route / Server Action | `src/app` route handlers 或 server actions、`src/server/generation` | 持久化服务、provider | 未登录不可生成；空输入不可生成；前端不直接调用 provider |
 | 5. Sandpack runtime | `src/features/preview`、`src/features/workspace` | schema 校验后的文件树 | Sandpack 只运行受控前端文件；不执行真实后端；不允许任意依赖安装 |
@@ -1075,3 +1075,55 @@ Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、�
 | 8. API/E2E 测试加固 | `tests`、Playwright/Vitest 配置 | 上述闭环 | AI 使用 mock 或稳定 fixture；覆盖鉴权、非法路径、失败恢复和导出前校验 |
 
 该顺序不改变 MVP 范围；它只是把 ADR-0003 后续动作拆成可验证的工程步骤。
+
+### ADR-0005: 落地版本、生成、对话和导出记录持久化服务边界
+
+#### 状态
+
+Accepted
+
+#### 背景
+
+ADR-0003 已建立生成输出校验、版本快照和导出 manifest 基础层，ADR-0004 已补齐本地 Supabase migration/RLS 文件。后续真实 OpenAI provider、工作台生成入口、版本历史 UI 和导出下载都需要先有稳定的数据库写入边界，确保生成成功、生成失败、对话摘要、版本快照和导出行为能被服务端记录。
+
+#### 决策
+
+新增服务端 repository 边界：
+
+- `src/server/generation/generationRepository.ts`：记录 generation request/result，成功标记 succeeded，失败标记 failed 并写入脱敏错误。
+- `src/server/versions/versionRepository.ts`：保存项目版本快照，并在 owner 条件下更新 `projects.current_version_id`。
+- `src/server/conversations/conversationRepository.ts`：记录用户 prompt 和 assistant summary，可关联成功版本。
+- `src/server/export/exportRepository.ts`：记录导出请求结果。
+
+`generationService` 在 provider 和 Zod/path 校验成功后才持久化版本并更新当前版本；失败只记录 failed result，不覆盖当前版本。数据库未配置时 repository 保持 no-op，以便本地无 Supabase 环境时继续运行脚本检查。
+
+#### 备选方案
+
+- 继续只返回内存数据边界：无法支撑后续版本历史、生成记录和导出记录。
+- 在 route handler 内直接写表：会让 API 层承担业务编排和持久化细节，降低可测试性。
+- 等真实 OpenAI 接入后再写持久化：会把 provider、校验、持久化和 UI 入口混在同一个高风险 Issue。
+
+#### 影响范围
+
+- `src/server/generation`
+- `src/server/versions`
+- `src/server/conversations`
+- `src/server/export`
+- `tests/phase4-persistence-records.test.mjs`
+- `docs/PROJECT_STATUS.md`
+
+#### 风险
+
+- 当前尚未连接真实 Supabase 项目执行端到端写入验证。
+- 失败记录只保存脱敏错误摘要，后续真实 provider 接入时仍需继续避免泄露原始 provider 错误、密钥或敏感 prompt。
+- 数据库 no-op 便于本地开发，但真实环境必须配置 `SUPABASE_DATABASE_URL` 才能获得持久化效果。
+
+#### 是否影响 MVP 范围
+
+否。该决策落实既定 MVP 的版本、生成记录、对话记录和导出记录持久化边界，不新增 P1/P2 能力。
+
+#### 后续动作
+
+- 在真实 Supabase 项目执行 migration/RLS 并验证跨用户隔离。
+- 接入真实 OpenAI Responses API provider。
+- 暴露服务端生成入口，并将工作台提交流接入持久化生成服务。

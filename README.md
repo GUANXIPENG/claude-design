@@ -1,7 +1,7 @@
 # AI Design Workspace
 
-Phase 3 adds the first persistence and authentication foundation on top of the
-Phase 1 scaffold and Phase 2 fixture-driven workspace shell.
+Issue #15 adds the first authenticated P0 project generation entry on top of
+the existing scaffold, auth, persistence, schema, and version foundations.
 
 ## Current Stage
 
@@ -18,9 +18,15 @@ This is not the full MVP. The app now establishes:
 - Server-side project repository/service functions that bind project reads and
   writes to the authenticated owner.
 - Zod schemas for project and quota inputs.
-- Phase 1, Phase 2, and Phase 3 verification scripts.
+- Server-only OpenAI Responses provider boundary with structured output and
+  Zod/path allowlist validation.
+- Authenticated project generation form that creates projects, pages, initial
+  versions, generation records, conversation messages, and quota usage records.
+- Workspace loading from `/workspace?projectId=<id>` using the persisted current
+  version snapshot.
+- Phase 1 through Phase 5 verification scripts.
 
-The workspace preview still uses fixture content. Real AI generation, Sandpack
+The workspace still uses a metadata/code preview rather than Sandpack. Sandpack
 runtime preview, export packaging, version rollback UI, and real payment or
 subscription logic are intentionally not implemented yet.
 
@@ -60,18 +66,19 @@ Phase 3 variables:
 - `SUPABASE_DATABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-Reserved for the later AI phase:
+AI generation variables:
 
 - `OPENAI_API_KEY`
+- `OPENAI_MODEL` defaults to `gpt-5.5` when unset.
 
 OpenAI API keys, Supabase service role keys, and database URLs must stay
 server-only. Browser code may only use the public Supabase URL and anon key.
 
 ## Project Boundaries
 
-Phase 3 establishes the auth and persistence boundary, but it does not turn the
-fixture workspace into a real generator yet. Future work should keep business
-logic out of `src/app` route files where possible and use:
+Issue #15 connects the first authenticated generation entry and lets the
+workspace read a persisted current version snapshot. Future work should keep
+business logic out of `src/app` route files where possible and use:
 
 - `src/features` for frontend product areas.
 - `src/lib/fixtures` for mock data that must not become the production data

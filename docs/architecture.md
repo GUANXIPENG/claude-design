@@ -1,12 +1,12 @@
 # AI Design Workspace 技术栈锁定与架构草案
 
-最后更新：2026-05-09
+最后更新：2026-05-23
 
 ## 1. 文档定位与当前仓库状态
 
 本文档是当前 MVP 阶段的技术决策基线，用于指导“类似 Claude Design 的 AI 设计生成网站”的持续实现。它不是永久架构，也不是最终工程实现说明。后续每次重要架构变化都必须在本文档的 ADR 记录中说明：为什么要改、改了什么、影响哪些模块、是否引入新风险、是否影响 MVP 范围。
 
-当前仓库已经包含 Phase 1 scaffold、Phase 2 fixture/mock 前端工作台、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界，以及已在真实 Supabase 项目验证通过的 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
+当前仓库已经包含 Phase 1 scaffold、Phase 2 前端工作台壳、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、Issue #15 server-only OpenAI Responses provider 与 P0 项目生成入口，以及已在真实 Supabase 项目验证通过的 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
 
 ### 1.1 已读取的仓库内容
 
@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；仍未完成真实 OpenAI provider、真实 Sandpack runtime、导出 zip 下载、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider 与 P0 项目生成入口已落地。仍未完成 Sandpack runtime、导出 zip 下载、版本历史/回退 UI、Playwright E2E 和生产部署配置。
 
 ### 1.2 架构目标
 
@@ -837,7 +837,7 @@ MVP 基线采用：
 | 问题 | 说明 | 推荐处理 |
 |---|---|---|
 | PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而架构文档需要锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
-| Phase 4 基础层不等于完整 Phase 4 闭环 | 当前已有 schema、mock provider、版本/生成/对话/导出持久化边界和导出 manifest 服务边界，但真实 OpenAI、Sandpack runtime、工作台提交入口、版本历史 UI 和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“基础边界已实现”和“真实产品闭环未实现” |
+| Phase 4/Issue #15 基础层不等于完整 MVP 闭环 | 当前已有 schema、mock provider、server-only OpenAI provider、P0 生成入口、版本/生成/对话/导出持久化边界和导出 manifest 服务边界，但 Sandpack runtime、版本历史 UI、完整迭代修改和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“生成入口已实现”和“完整 MVP 闭环未实现” |
 | Supabase RLS 已验证但仍有性能优化项 | 真实 Supabase migration/RLS 已执行并验证跨用户隔离；performance advisor 提示 `auth_rls_initplan` | Issue #14 优化 policy 中适用的 `auth.uid()` 调用为 `(select auth.uid())` 并复跑 advisor |
 
 ### 6.2 待确认问题
@@ -1076,6 +1076,8 @@ Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、�
 
 该顺序不改变 MVP 范围；它只是把 ADR-0003 后续动作拆成可验证的工程步骤。
 
+注：第 3、4 项已由 ADR-0006 / Issue #15 完成。当前剩余 MVP 路线从 Sandpack 受控预览开始，随后是版本 UI、导出 zip 和 API/E2E 加固。
+
 ### ADR-0005: 落地版本、生成、对话和导出记录持久化服务边界
 
 #### 状态
@@ -1127,3 +1129,54 @@ ADR-0003 已建立生成输出校验、版本快照和导出 manifest 基础层�
 - 接入真实 OpenAI Responses API provider。
 - 暴露服务端生成入口，并将工作台提交流接入持久化生成服务。
 - 按 Issue #14 优化 RLS policy 的 `auth.uid()` 调用并复跑 Supabase performance advisor。
+## ADR-0006: P0 project generation entry with OpenAI Responses API
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #15 implements the first real P0 generation loop after the Phase 4
+persistence boundary. A logged-in user can submit a natural-language prompt from
+the project list, the server can call the OpenAI Responses API through a
+server-only provider, and validated output can be persisted as a project,
+pages, an initial version snapshot, generation records, conversation messages,
+and quota usage.
+
+### Decision
+
+- Add `src/server/ai/openaiProvider.ts` as the OpenAI Responses API adapter.
+- Keep `OPENAI_API_KEY` and `OPENAI_MODEL` server-only. The default model is
+  `gpt-5.5`, overridable by `OPENAI_MODEL`.
+- Request JSON Schema structured output from Responses API, then run the result
+  through existing Zod schemas and file path allowlist validation before any
+  project write.
+- Add `src/server/generation/projectGenerationService.ts` to orchestrate new
+  project generation and persistence.
+- Add a server action in `src/server/generation/actions.ts`; frontend components
+  submit form data only and never import the OpenAI SDK.
+- Load `/workspace?projectId=<id>` from the persisted current version snapshot
+  instead of presenting fixture data as a real generated result.
+
+### Consequences
+
+- The first P0 generation entry is now connected to the existing auth, project,
+  version, conversation, generation-result, and quota boundaries.
+- Sandpack runtime, zip export, version history UI, rollback UI, and full
+  iterative modification remain separate MVP stages.
+- Provider failures are surfaced to the project list as a generic user-facing
+  error. Raw provider errors and keys are not exposed to browser code.
+
+### Risks
+
+- Real provider execution still requires a valid local `OPENAI_API_KEY`; tests
+  must use mock provider/client paths and must not depend on network calls.
+- Database persistence requires configured Supabase/Postgres environment
+  variables. Without them, authenticated UI and end-to-end writes cannot be
+  fully exercised locally.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR implements the existing P0 generation entry
+and keeps preview runtime, export packaging, and version UI for later stages.

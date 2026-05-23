@@ -75,11 +75,11 @@ assert.match(exportService, /recordQuotaUsage/);
 
 const workspace = readText("src/features/workspace/components/WorkspacePage.tsx");
 [
-  "Phase 4 generation foundation",
+  "P0 project workspace",
   "Selection context",
-  "Rollback creates a new current version",
+  "version history UI",
   "Export current version",
-  "Sandpack preview pending",
+  "Sandpack pending",
   "Prototype boundary"
 ].forEach((marker) => assert.match(workspace, new RegExp(marker)));
 

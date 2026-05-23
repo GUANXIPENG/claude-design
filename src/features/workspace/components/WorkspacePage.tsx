@@ -1,10 +1,24 @@
 "use client";
 
-import type { FormEvent } from "react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
-import { primaryFixtureProject } from "@/lib/fixtures/workspace";
+import type { VersionSnapshot } from "@/schemas/generation";
 
-type GenerationState = "idle" | "generating" | "ready";
+type ProjectWorkspaceSnapshot = {
+  currentVersion: {
+    id: string;
+    snapshot: VersionSnapshot;
+    summary: string;
+    versionNumber: number;
+  } | null;
+  project: {
+    description: string | null;
+    id: string;
+    name: string;
+    updatedAt: string;
+  };
+};
+
 type SelectionState = {
   label: string;
   scope: string;
@@ -12,51 +26,43 @@ type SelectionState = {
 
 type WorkspacePageProps = {
   authUserEmail: string | null;
+  workspaceProject: ProjectWorkspaceSnapshot | null;
 };
 
-export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
-  const [selectedPageId, setSelectedPageId] = useState(primaryFixtureProject.pages[0].id);
-  const [draft, setDraft] = useState("");
-  const [message, setMessage] = useState(
-    "Phase 4 generation foundation is ready for server-side schema validation, version snapshots, and export manifests. The visible preview still uses fixture content."
-  );
-  const [generationState, setGenerationState] = useState<GenerationState>("idle");
-  const [selection, setSelection] = useState<SelectionState | null>({
-    label: "Home / Hero section",
-    scope: "Local edit requests default to this selected prototype section."
-  });
+export function WorkspacePage({ authUserEmail, workspaceProject }: WorkspacePageProps) {
+  const snapshot = workspaceProject?.currentVersion?.snapshot ?? null;
+  const pages = snapshot?.pages ?? [];
+  const [selectedPageId, setSelectedPageId] = useState(pages[0]?.id ?? "");
+  const [selection, setSelection] = useState<SelectionState | null>(null);
 
   const selectedPage = useMemo(
-    () =>
-      primaryFixtureProject.pages.find((page) => page.id === selectedPageId) ??
-      primaryFixtureProject.pages[0],
-    [selectedPageId]
+    () => pages.find((page) => page.id === selectedPageId) ?? pages[0] ?? null,
+    [pages, selectedPageId]
   );
+  const code =
+    selectedPage && snapshot?.files ? snapshot.files[selectedPage.filePath] ?? "" : "";
 
-  const code = primaryFixtureProject.files[selectedPage.filePath] ?? "";
-
-  function submitPrompt(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!draft.trim()) {
-      setMessage("Please describe what to generate or change before submitting.");
-      setGenerationState("idle");
-      return;
-    }
-
-    setGenerationState("generating");
-    setMessage(
-      selection
-        ? `Generating fixture preview with selection context: ${selection.label}. No AI request is being sent from the browser.`
-        : "Generating fixture preview. No AI request is being sent from the browser."
+  if (!workspaceProject) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-canvas p-6 text-ink">
+        <section className="w-full max-w-xl rounded-lg border border-line bg-white p-6 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">
+            Workspace
+          </p>
+          <h1 className="mt-3 text-2xl font-semibold">No project selected</h1>
+          <p className="mt-3 text-sm leading-6 text-muted">
+            Choose a saved project or generate a new prototype before opening
+            the workspace.
+          </p>
+          <Link
+            className="mt-5 inline-flex h-10 items-center justify-center rounded-md bg-accent px-4 text-sm font-medium text-white"
+            href="/projects"
+          >
+            Back to projects
+          </Link>
+        </section>
+      </main>
     );
-
-    window.setTimeout(() => {
-      setGenerationState("ready");
-      setMessage(
-        "Fixture update ready. Phase 4 server services validate generated files, create a project version snapshot, and prepare export manifests before real persistence is connected."
-      );
-    }, 450);
   }
 
   return (
@@ -64,21 +70,22 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
       <header className="flex flex-col gap-3 border-b border-line bg-white px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">
-            Phase 4 generation foundation
+            P0 project workspace
           </p>
-          <h1 className="mt-1 text-xl font-semibold">{primaryFixtureProject.name}</h1>
+          <h1 className="mt-1 text-xl font-semibold">{workspaceProject.project.name}</h1>
           <p className="mt-1 text-xs text-muted">
-            Signed in as {authUserEmail ?? "authenticated user"}
+            Signed in as {authUserEmail ?? "authenticated user"} / Updated{" "}
+            {new Date(workspaceProject.project.updatedAt).toLocaleDateString()}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="rounded-full border border-line px-3 py-1 text-muted">
-            Current version v{primaryFixtureProject.versionCount}
+            Current version v{workspaceProject.currentVersion?.versionNumber ?? 0}
           </span>
-          <button className="rounded-md border border-line px-3 py-2" type="button">
+          <button className="rounded-md border border-line px-3 py-2" disabled type="button">
             Version history
           </button>
-          <button className="rounded-md bg-accent px-3 py-2 text-white" type="button">
+          <button className="rounded-md bg-accent px-3 py-2 text-white" disabled type="button">
             Export current version
           </button>
         </div>
@@ -89,11 +96,11 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
           <div className="mb-4">
             <h2 className="text-sm font-semibold">Pages</h2>
             <p className="mt-1 text-xs leading-5 text-muted">
-              Fixture navigation only. Page changes update preview and code view.
+              Reads the persisted current version snapshot for this project.
             </p>
           </div>
           <nav className="space-y-2">
-            {primaryFixtureProject.pages.map((page) => (
+            {pages.map((page) => (
               <button
                 className={`w-full rounded-md border px-3 py-3 text-left text-sm ${
                   page.id === selectedPageId
@@ -114,11 +121,13 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
         <section className="min-h-[560px] p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold">Preview</h2>
-              <p className="text-xs text-muted">{selectedPage.purpose}</p>
+              <h2 className="text-sm font-semibold">Preview metadata</h2>
+              <p className="text-xs text-muted">
+                {selectedPage?.purpose ?? "This project has no generated pages yet."}
+              </p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-xs text-muted">
-              Desktop fixture
+              Sandpack pending
             </span>
           </div>
 
@@ -128,38 +137,35 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
                 Prototype boundary
               </p>
               <h3 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight">
-                {selectedPage.previewTitle}
+                {snapshot?.project.name ?? workspaceProject.project.name}
               </h3>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
-                {selectedPage.previewSummary}
+                {snapshot?.project.description ??
+                  workspaceProject.project.description ??
+                  "No generated description was saved."}
               </p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                {selectedPage.highlights.map((highlight) => (
-                  <div className="rounded-md border border-line bg-white p-3" key={highlight}>
-                    <span className="text-sm font-medium">{highlight}</span>
-                  </div>
-                ))}
-              </div>
+              <p className="mt-4 max-w-2xl text-xs leading-5 text-muted">
+                {snapshot?.prototypeBoundaryNotice}
+              </p>
             </div>
           </div>
 
           <div className="mt-4 rounded-lg border border-line bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Code view</h2>
-              <span className="text-xs text-muted">{selectedPage.filePath}</span>
+              <span className="text-xs text-muted">{selectedPage?.filePath ?? "No file"}</span>
             </div>
             <pre className="max-h-72 overflow-auto rounded-md bg-[#17202a] p-4 text-xs leading-5 text-[#e6edf3]">
-              <code>{code}</code>
+              <code>{code || "No generated code found for the selected page."}</code>
             </pre>
           </div>
         </section>
 
         <aside className="border-t border-line bg-white p-4 lg:border-l lg:border-t-0">
           <div className="mb-4 rounded-md border border-line bg-canvas p-3 text-xs leading-5 text-muted">
-            This workspace is protected by Supabase Auth. Preview content still uses
-            fixture output, while Phase 4 server boundaries now cover AI output
-            schema validation, safe file paths, version snapshots, rollback records,
-            quota recording, and export manifests. Sandpack preview pending.
+            The current workspace displays persisted prototype metadata and safe
+            generated files. Sandpack runtime, version history UI, rollback UI,
+            and zip export are separate MVP stages.
           </div>
 
           <div className="mb-4 rounded-lg border border-line p-3">
@@ -173,18 +179,18 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
                 </p>
                 <p className="mt-1 text-xs leading-5 text-muted">
                   {selection?.scope ??
-                    "Requests apply to the current page unless the text expands the scope."}
+                    "Local edit requests will use this context in a later iteration stage."}
                 </p>
               </div>
               <button
                 className="rounded-md border border-line px-2 py-1 text-xs text-muted"
                 onClick={() =>
                   setSelection((current) =>
-                    current
+                    current || !selectedPage
                       ? null
                       : {
-                          label: `${selectedPage.name} / Primary section`,
-                          scope: "Local edit requests default to this selected prototype section."
+                          label: `${selectedPage.name} / Current page`,
+                          scope: "Selected from the persisted current version snapshot."
                         }
                   )
                 }
@@ -195,52 +201,31 @@ export function WorkspacePage({ authUserEmail }: WorkspacePageProps) {
             </div>
           </div>
 
-          <div className="mb-4 grid gap-2 text-xs text-muted">
-            <div className="rounded-md border border-line p-3">
-              Rollback creates a new current version instead of mutating history.
-            </div>
-            <div className="rounded-md border border-line p-3">
-              Export current version uses a server-side safe file manifest.
-            </div>
-          </div>
-
           <div className="space-y-3">
             <div className="rounded-lg border border-line p-3">
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-accent">
-                System
+                Generation summary
               </p>
-              <p className="mt-2 text-sm leading-6 text-muted">{message}</p>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                {workspaceProject.currentVersion?.summary ??
+                  "No current version snapshot has been saved."}
+              </p>
             </div>
-            {generationState === "generating" ? (
-              <div className="rounded-lg border border-line p-3 text-sm text-muted">
-                Generating fixture preview...
-              </div>
-            ) : null}
-            {generationState === "ready" ? (
-              <div className="rounded-lg border border-accent bg-canvas p-3 text-sm">
-                Fixture update ready for {selectedPage.name}.
+            {snapshot?.navigation.length ? (
+              <div className="rounded-lg border border-line p-3">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-accent">
+                  Navigation
+                </p>
+                <ul className="mt-2 space-y-2 text-sm text-muted">
+                  {snapshot.navigation.map((item) => (
+                    <li key={`${item.from}-${item.to}-${item.label}`}>
+                      {item.label}: {item.from} to {item.to}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ) : null}
           </div>
-
-          <form className="mt-5 space-y-3" onSubmit={submitPrompt}>
-            <label className="block text-sm font-medium" htmlFor="workspace-draft">
-              Request
-            </label>
-            <textarea
-              className="min-h-32 w-full resize-y rounded-md border border-line bg-white p-3 text-sm outline-none focus:border-accent"
-              id="workspace-draft"
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Describe a generation or local edit request..."
-              value={draft}
-            />
-            <button
-              className="w-full rounded-md bg-accent px-4 py-3 text-sm font-medium text-white"
-              type="submit"
-            >
-              Generate fixture response
-            </button>
-          </form>
         </aside>
       </div>
     </main>

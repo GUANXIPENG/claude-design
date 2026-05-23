@@ -108,7 +108,7 @@ assert.match(projectList, /projectCount/);
 
 const workspace = readText("src/features/workspace/components/WorkspacePage.tsx");
 assert.match(workspace, /authUserEmail/);
-assert.match(workspace, /primaryFixtureProject/);
+assert.match(workspace, /workspaceProject/);
 assert.doesNotMatch(workspace, /localStorage/);
 
 const readme = readText("README.md");

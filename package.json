@@ -7,13 +7,14 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs && node tests/phase3-persistence-auth.test.mjs && node tests/phase4-generation-preview-export.test.mjs && node tests/phase4-supabase-migration-rls.test.mjs && node tests/phase4-persistence-records.test.mjs"
+    "test": "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs && node tests/phase3-persistence-auth.test.mjs && node tests/phase4-generation-preview-export.test.mjs && node tests/phase4-supabase-migration-rls.test.mjs && node tests/phase4-persistence-records.test.mjs && node tests/phase5-p0-generation-entry.test.mjs && vitest run tests/phase5-p0-generation-entry.behavior.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.3",
     "drizzle-orm": "^0.45.2",
     "next": "^16.2.5",
+    "openai": "^6.39.0",
     "postgres": "^3.4.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -30,6 +31,7 @@
     "eslint": "^8.57.0",
     "postcss": "^8.5.0",
     "tailwindcss": "^3.4.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.7"
   }
 }

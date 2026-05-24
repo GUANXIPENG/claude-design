@@ -6,7 +6,7 @@
 
 本文档是当前 MVP 阶段的技术决策基线，用于指导“类似 Claude Design 的 AI 设计生成网站”的持续实现。它不是永久架构，也不是最终工程实现说明。后续每次重要架构变化都必须在本文档的 ADR 记录中说明：为什么要改、改了什么、影响哪些模块、是否引入新风险、是否影响 MVP 范围。
 
-当前仓库已经包含 Phase 1 scaffold、Phase 2 fixture/mock 前端工作台、Phase 3 Supabase Auth/Drizzle 基础层，以及 Phase 4 生成输出校验、mock provider、版本快照和导出 manifest 服务边界。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
+当前仓库已经包含 Phase 1 scaffold、Phase 2 fixture/mock 前端工作台、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界，以及已在真实 Supabase 项目验证通过的 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
 
 ### 1.1 已读取的仓库内容
 
@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前已补齐本地 Supabase migration/RLS SQL 文件；仍未完成真实 Supabase 远程执行与跨用户 RLS 验证、真实 OpenAI provider、真实 Sandpack runtime、导出 zip 下载、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；仍未完成真实 OpenAI provider、真实 Sandpack runtime、导出 zip 下载、Playwright E2E 和生产部署配置。
 
 ### 1.2 架构目标
 
@@ -837,8 +837,8 @@ MVP 基线采用：
 | 问题 | 说明 | 推荐处理 |
 |---|---|---|
 | PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而架构文档需要锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
-| Phase 4 基础层不等于完整 Phase 4 闭环 | 当前已有 schema、mock provider、版本和导出 manifest 服务边界，但真实 OpenAI、Sandpack runtime、数据库写入和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“基础边界已实现”和“真实闭环未实现” |
-| Supabase schema 与真实数据库仍未对齐 | Drizzle schema 和本地 migration/RLS 文件已存在，但尚未在真实 Supabase 项目执行和验证 | 后续必须执行数据库变更、应用 RLS policy，并验证跨用户隔离 |
+| Phase 4 基础层不等于完整 Phase 4 闭环 | 当前已有 schema、mock provider、版本/生成/对话/导出持久化边界和导出 manifest 服务边界，但真实 OpenAI、Sandpack runtime、工作台提交入口、版本历史 UI 和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“基础边界已实现”和“真实产品闭环未实现” |
+| Supabase RLS 已验证但仍有性能优化项 | 真实 Supabase migration/RLS 已执行并验证跨用户隔离；performance advisor 提示 `auth_rls_initplan` | Issue #14 优化 policy 中适用的 `auth.uid()` 调用为 `(select auth.uid())` 并复跑 advisor |
 
 ### 6.2 待确认问题
 
@@ -928,7 +928,7 @@ Phase 3 基础层采用：
 #### 风险
 
 - 本地未配置 Supabase 环境变量时无法真实登录，页面会显示配置缺失提示。
-- ADR-0002 完成时尚未创建真实数据库 migration 文件或 RLS policy；当前已由 ADR-0004 补齐本地 SQL/RLS 文件，部署前仍需在 Supabase 中执行迁移并验证 RLS。
+- ADR-0002 完成时尚未创建真实数据库 migration 文件或 RLS policy；当前已由 ADR-0004 补齐本地 SQL/RLS 文件，并已在 Issue #13 中完成真实 Supabase 远程执行与 RLS 验证。
 - 项目列表已经转为服务端持久化读取，未配置数据库时会显示空状态，不再显示 fixture 项目卡片。
 
 #### 是否影响 MVP 范围
@@ -937,8 +937,8 @@ Phase 3 基础层采用：
 
 #### 后续动作
 
-- 本地 Drizzle migration SQL 已由 ADR-0004 补齐；后续需要在真实 Supabase 项目执行并验证。
-- 本地 Supabase RLS policy SQL 已由 ADR-0004 补齐；后续需要在真实 Supabase 项目应用并验证项目、页面、版本、对话、导出和额度记录按用户隔离。
+- 本地 Drizzle migration SQL 已由 ADR-0004 补齐，并已在真实 Supabase 项目执行验证。
+- 本地 Supabase RLS policy SQL 已由 ADR-0004 补齐，并已在真实 Supabase 项目验证项目、页面、版本、对话、生成、导出和额度记录按用户隔离。
 - 在 Phase 4 接入真实 AI 生成前，把生成结果 schema、路径安全和版本快照写入同一服务端边界。
 
 ## 9. Phase 4 实施记录
@@ -1002,7 +1002,7 @@ Phase 4 基础层采用：
 
 - 用真实 OpenAI Responses API provider 替换 mock provider，并保留同一 `AiProvider` 接口。
 - 接入 Sandpack，把通过 schema 校验的文件树载入受控预览。
-- 将版本快照、生成记录和导出记录写入 Supabase，并基于 ADR-0004 的 migration/RLS 文件执行真实数据库验证。
+- 版本快照、生成记录、对话记录和导出记录写入 Supabase 的 repository 边界已由 ADR-0005 落地；真实数据库 schema/RLS 验证已由 Issue #13 完成。
 - 实现导出 zip / 静态包下载。
 
 ### ADR-0004: 补齐 Supabase migration 与 RLS policy 基础层
@@ -1033,7 +1033,7 @@ Issue #6 对应 Phase 4 后续落地顺序的第 1 步：在真实 OpenAI、Sand
 
 #### 取舍原因
 
-先提交本地 migration/RLS 文件可以让后续持久化服务在稳定表结构上开发，也让权限策略进入代码审查和测试范围。真实 Supabase 远程执行仍需要单独环境变量和项目权限，因此本阶段只完成仓库内可验证基础层，不声称已经完成远程数据库部署或跨用户真实查询验证。
+先提交本地 migration/RLS 文件可以让后续持久化服务在稳定表结构上开发，也让权限策略进入代码审查和测试范围。真实 Supabase 远程执行已在 Issue #13 中补做并通过跨用户隔离验证；该 ADR 本身仍只记录本地 SQL/RLS 文件落地决策。
 
 #### 影响范围
 
@@ -1045,7 +1045,7 @@ Issue #6 对应 Phase 4 后续落地顺序的第 1 步：在真实 OpenAI、Sand
 
 #### 风险
 
-- 当前 SQL 尚未在真实 Supabase 项目执行，可能仍需要根据远程数据库状态调整 migration 顺序。
+- 当前 SQL 已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行并验证；后续 schema 变更仍需通过新的 migration 或可审计 SQL 管理。
 - RLS policy 文件已覆盖当前 MVP 表，但后续新增分享、团队、公开模板或协作时必须重新设计权限模型。
 - 当前检查能验证 SQL 文件包含关键策略，不能替代真实多用户集成测试。
 
@@ -1055,9 +1055,9 @@ Issue #6 对应 Phase 4 后续落地顺序的第 1 步：在真实 OpenAI、Sand
 
 #### 后续动作
 
-- 在真实 Supabase 项目执行 `drizzle/0001_initial_schema.sql` 和 `supabase/policies/0001_project_rls.sql`。
-- 用不同用户验证 projects/pages/versions/messages/generation/export/quota 的跨用户隔离。
-- 进入下一个 Issue：将版本快照、generation request/result 和 conversation message 写入 Supabase/Drizzle 服务层。
+- Issue #13 已在真实 Supabase 项目执行 `drizzle/0001_initial_schema.sql` 和 `supabase/policies/0001_project_rls.sql`，并验证跨用户隔离。
+- Issue #13 已用不同用户验证 projects/pages/versions/messages/generation/export/quota 的跨用户隔离。
+- 版本快照、generation request/result、conversation message 和 export record 的 repository 边界已由 ADR-0005 落地。
 
 ### 9.2 Phase 4 后续落地顺序
 
@@ -1066,7 +1066,7 @@ Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、�
 | 顺序 | 架构落点 | 依赖 | 必须保持的边界 |
 |---|---|---|---|
 | 1. Supabase migration/RLS | `src/server/db`、migration 文件、Supabase policy 文档 | Phase 3 Drizzle schema | 数据库层 RLS 与服务端权限校验同时存在；不信任前端 userId |
-| 2. 版本/生成记录持久化 | `src/server/versions`、`src/server/generation`、repositories | migration/RLS | 生成失败不能覆盖当前版本；rollback 必须创建新版本记录 |
+| 2. 版本/生成记录持久化 | `src/server/versions`、`src/server/generation`、repositories | migration/RLS | 已补服务端持久化边界；生成失败不能覆盖当前版本；rollback 必须创建新版本记录 |
 | 3. OpenAI Responses provider | `src/server/ai` | Phase 4 schema 和 prompt | OpenAI key server-only；provider 错误脱敏；输出必须过 Zod 和路径 allowlist |
 | 4. 生成 route / Server Action | `src/app` route handlers 或 server actions、`src/server/generation` | 持久化服务、provider | 未登录不可生成；空输入不可生成；前端不直接调用 provider |
 | 5. Sandpack runtime | `src/features/preview`、`src/features/workspace` | schema 校验后的文件树 | Sandpack 只运行受控前端文件；不执行真实后端；不允许任意依赖安装 |
@@ -1075,3 +1075,55 @@ Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、�
 | 8. API/E2E 测试加固 | `tests`、Playwright/Vitest 配置 | 上述闭环 | AI 使用 mock 或稳定 fixture；覆盖鉴权、非法路径、失败恢复和导出前校验 |
 
 该顺序不改变 MVP 范围；它只是把 ADR-0003 后续动作拆成可验证的工程步骤。
+
+### ADR-0005: 落地版本、生成、对话和导出记录持久化服务边界
+
+#### 状态
+
+Accepted
+
+#### 背景
+
+ADR-0003 已建立生成输出校验、版本快照和导出 manifest 基础层，ADR-0004 已补齐本地 Supabase migration/RLS 文件。后续真实 OpenAI provider、工作台生成入口、版本历史 UI 和导出下载都需要先有稳定的数据库写入边界，确保生成成功、生成失败、对话摘要、版本快照和导出行为能被服务端记录。
+
+#### 决策
+
+新增服务端 repository 边界：
+
+- `src/server/generation/generationRepository.ts`：记录 generation request/result，成功标记 succeeded，失败标记 failed 并写入脱敏错误。
+- `src/server/versions/versionRepository.ts`：保存项目版本快照，并在 owner 条件下更新 `projects.current_version_id`。
+- `src/server/conversations/conversationRepository.ts`：记录用户 prompt 和 assistant summary，可关联成功版本。
+- `src/server/export/exportRepository.ts`：记录导出请求结果。
+
+`generationService` 在 provider 和 Zod/path 校验成功后才持久化版本并更新当前版本；失败只记录 failed result，不覆盖当前版本。数据库未配置时 repository 保持 no-op，以便本地无 Supabase 环境时继续运行脚本检查。
+
+#### 备选方案
+
+- 继续只返回内存数据边界：无法支撑后续版本历史、生成记录和导出记录。
+- 在 route handler 内直接写表：会让 API 层承担业务编排和持久化细节，降低可测试性。
+- 等真实 OpenAI 接入后再写持久化：会把 provider、校验、持久化和 UI 入口混在同一个高风险 Issue。
+
+#### 影响范围
+
+- `src/server/generation`
+- `src/server/versions`
+- `src/server/conversations`
+- `src/server/export`
+- `tests/phase4-persistence-records.test.mjs`
+- `docs/PROJECT_STATUS.md`
+
+#### 风险
+
+- 真实 Supabase migration/RLS 已在 Issue #13 中验证；端到端业务写入仍需等生成 route / Server Action 接入后继续复验。
+- 失败记录只保存脱敏错误摘要，后续真实 provider 接入时仍需继续避免泄露原始 provider 错误、密钥或敏感 prompt。
+- 数据库 no-op 便于本地开发，但真实环境必须配置 `SUPABASE_DATABASE_URL` 才能获得持久化效果。
+
+#### 是否影响 MVP 范围
+
+否。该决策落实既定 MVP 的版本、生成记录、对话记录和导出记录持久化边界，不新增 P1/P2 能力。
+
+#### 后续动作
+
+- 接入真实 OpenAI Responses API provider。
+- 暴露服务端生成入口，并将工作台提交流接入持久化生成服务。
+- 按 Issue #14 优化 RLS policy 的 `auth.uid()` 调用并复跑 Supabase performance advisor。

@@ -48,8 +48,8 @@ export type GenerationMode = z.infer<typeof generationModeSchema>;
 export type GeneratedProject = z.infer<typeof generatedProjectSchema>;
 export type VersionSnapshot = z.infer<typeof versionSnapshotSchema>;
 
-const ALLOWED_FILE_EXTENSIONS = [".tsx", ".ts", ".css", ".json", ".md"];
-const ALLOWED_FILE_PREFIXES = ["app/", "components/", "styles/", "public/", "README.md", "package.json"];
+const ALLOWED_FILE_EXTENSIONS = [".tsx", ".ts", ".css", ".md"];
+const ALLOWED_FILE_PREFIXES = ["app/", "components/", "styles/", "public/", "README.md"];
 
 export const FORBIDDEN_FILE_PATTERNS = [
   ".env",
@@ -59,6 +59,15 @@ export const FORBIDDEN_FILE_PATTERNS = [
   ".bash",
   ".cmd",
   ".ps1",
+  "actions.ts",
+  "actions.tsx",
+  "action.ts",
+  "action.tsx",
+  "middleware.ts",
+  "middleware.tsx",
+  "package.json",
+  "route.ts",
+  "route.tsx",
   "server/",
   "src/server/",
   "node_modules/",
@@ -92,6 +101,18 @@ export function validateGeneratedFilePath(filePath: string): string {
 
   if (!hasAllowedPrefix || !hasAllowedExtension) {
     throw new Error(`Generated file path is outside the Phase 4 allowlist: ${filePath}`);
+  }
+
+  if (lowerPath.startsWith("app/") && !lowerPath.endsWith("/page.tsx") && lowerPath !== "app/page.tsx") {
+    throw new Error(`Generated app file path must be a front-end page: ${filePath}`);
+  }
+
+  if (lowerPath.startsWith("components/") && !lowerPath.endsWith(".tsx")) {
+    throw new Error(`Generated component path must be a TSX component: ${filePath}`);
+  }
+
+  if (lowerPath.startsWith("styles/") && !lowerPath.endsWith(".css")) {
+    throw new Error(`Generated style path must be CSS: ${filePath}`);
   }
 
   return normalizedPath;
@@ -132,4 +153,24 @@ export function createVersionSnapshot(project: GeneratedProject): VersionSnapsho
       "This export is a front-end prototype and development starting point. It does not include real backend, payment, auth, or data synchronization logic.",
     summary: project.summary
   });
+}
+
+export function validateVersionSnapshot(input: unknown): VersionSnapshot {
+  const snapshot = versionSnapshotSchema.parse(input);
+  const safeFilePaths = new Set<string>();
+
+  Object.keys(snapshot.files).forEach((filePath) => {
+    const safePath = validateGeneratedFilePath(filePath);
+    safeFilePaths.add(safePath);
+  });
+
+  snapshot.pages.forEach((page) => {
+    const safePagePath = validateGeneratedFilePath(page.filePath);
+
+    if (!safeFilePaths.has(safePagePath)) {
+      throw new Error(`Generated page references a missing file: ${safePagePath}`);
+    }
+  });
+
+  return snapshot;
 }

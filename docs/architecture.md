@@ -1,12 +1,12 @@
 # AI Design Workspace 技术栈锁定与架构草案
 
-最后更新：2026-05-23
+最后更新：2026-05-24
 
 ## 1. 文档定位与当前仓库状态
 
 本文档是当前 MVP 阶段的技术决策基线，用于指导“类似 Claude Design 的 AI 设计生成网站”的持续实现。它不是永久架构，也不是最终工程实现说明。后续每次重要架构变化都必须在本文档的 ADR 记录中说明：为什么要改、改了什么、影响哪些模块、是否引入新风险、是否影响 MVP 范围。
 
-当前仓库已经包含 Phase 1 scaffold、Phase 2 前端工作台壳、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、Issue #15 server-only OpenAI Responses provider 与 P0 项目生成入口，以及已在真实 Supabase 项目验证通过的 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
+当前仓库已经包含 Phase 1 scaffold、Phase 2 前端工作台壳、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、Issue #15 server-only OpenAI Responses provider 与 P0 项目生成入口、Issue #18 pre-Sandpack user profile upsert、严格生成文件路径校验、persisted snapshot 运行时校验和 auth callback returnTo 站内路径限制，以及已在真实 Supabase 项目验证通过的 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
 
 ### 1.1 已读取的仓库内容
 
@@ -1180,3 +1180,53 @@ and quota usage.
 
 No P1/P2 scope is added. This ADR implements the existing P0 generation entry
 and keeps preview runtime, export packaging, and version UI for later stages.
+
+## ADR-0007: Pre-Sandpack Safety Boundary Hardening
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #18 addresses safety gaps found before connecting persisted generated
+files to a live Sandpack runtime. The P0 generation entry can now persist
+version snapshots, so the workspace preview path must treat database snapshots
+as untrusted runtime data instead of relying on TypeScript casts.
+
+### Decision
+
+- Add `ensureUserProfile` in `src/server/auth/userProfile.ts` and call it from
+  protected session resolution and the Supabase auth callback. First-time auth
+  users now get an idempotent `user_profiles` upsert before project writes.
+- Add shared auth `returnTo` sanitization so login callbacks and magic-link
+  redirects only accept same-origin paths.
+- Tighten generated file validation in `src/schemas/generation.ts`. Generated
+  files are limited to prototype front-end files and explicitly reject server
+  routes, actions, middleware, package manifests, scripts, dependency folders,
+  environment files, and other sensitive paths.
+- Add `validateVersionSnapshot` and use it in the project repository before a
+  persisted current version snapshot reaches the workspace UI.
+- Keep Sandpack runtime, export zip packaging, version history UI, and rollback
+  UI as later MVP stages.
+
+### Consequences
+
+- The next Sandpack issue can start from a stricter, tested snapshot boundary.
+- Invalid persisted snapshots now fail during workspace load instead of being
+  passed through as trusted `VersionSnapshot` data.
+- User profile creation is no longer an implicit prerequisite that can break
+  first project generation for a newly authenticated user.
+
+### Risks
+
+- The file allowlist is intentionally conservative. Some legitimate prototype
+  assets may need explicit support in a future issue before Sandpack or export
+  can use them.
+- Real Supabase Auth and OpenAI provider calls still require valid local
+  environment variables for end-to-end manual verification.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR only hardens the existing P0 generation,
+auth, persistence, and preview-read boundaries before the Sandpack stage.

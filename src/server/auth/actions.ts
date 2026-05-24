@@ -1,11 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { sanitizeReturnTo } from "@/server/auth/returnTo";
 import { createSupabaseServerClient, hasSupabaseAuthConfig } from "@/server/auth/session";
 
 function getReturnTo(formData: FormData) {
-  const returnTo = formData.get("returnTo");
-  return typeof returnTo === "string" && returnTo.startsWith("/") ? returnTo : "/projects";
+  return sanitizeReturnTo(formData.get("returnTo"));
 }
 
 export async function signInWithEmail(formData: FormData) {

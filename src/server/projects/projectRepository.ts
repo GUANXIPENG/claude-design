@@ -3,7 +3,11 @@ import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDatabase } from "@/server/db/client";
 import { pages, projects, projectVersions } from "@/server/db/schema";
-import type { GeneratedProject, VersionSnapshot } from "@/schemas/generation";
+import {
+  validateVersionSnapshot,
+  type GeneratedProject,
+  type VersionSnapshot
+} from "@/schemas/generation";
 import { projectCreateSchema, type ProjectCreateInput } from "@/schemas/project";
 
 export type ProjectSummary = {
@@ -175,7 +179,7 @@ export async function getProjectWorkspaceByOwner(
     currentVersion: currentVersion
       ? {
           id: currentVersion.id,
-          snapshot: currentVersion.snapshot as VersionSnapshot,
+          snapshot: validateVersionSnapshot(currentVersion.snapshot),
           summary: currentVersion.summary,
           versionNumber: currentVersion.versionNumber
         }

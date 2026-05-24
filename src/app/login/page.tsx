@@ -1,4 +1,5 @@
 import { signInWithEmail, signOut } from "@/server/auth/actions";
+import { sanitizeReturnTo } from "@/server/auth/returnTo";
 import { getCurrentUser, hasSupabaseAuthConfig } from "@/server/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const error = getParam(params, "error");
   const sent = getParam(params, "sent");
-  const returnTo = getParam(params, "returnTo") ?? "/projects";
+  const returnTo = sanitizeReturnTo(getParam(params, "returnTo"));
   const user = await getCurrentUser();
   const isConfigured = hasSupabaseAuthConfig();
 
@@ -32,9 +33,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Sign in to access private prototype projects.
             </h1>
             <p className="mt-4 text-sm leading-6 text-muted">
-              Phase 3 adds the lightweight account boundary required for project
-              ownership, private project access, database persistence, and quota
-              records. AI generation remains a later Phase 4 capability.
+              The lightweight account boundary protects project ownership,
+              private project access, database persistence, quota records, and
+              server-side generation. Sandpack preview, version UI, and zip
+              export remain later MVP stages.
             </p>
           </div>
           <div className="rounded-lg border border-line bg-white p-5 shadow-sm">

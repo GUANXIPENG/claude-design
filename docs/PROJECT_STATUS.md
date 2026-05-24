@@ -1,10 +1,10 @@
 # 项目状态文档
 
-最后更新：2026-05-23
+最后更新：2026-05-24
 
 ## 1. 当前项目阶段
 
-当前项目处于：**Issue #15 P0 项目生成入口已完成代码落地：Supabase migration/RLS、版本/生成/导出记录持久化服务边界、server-only OpenAI Responses provider、项目列表生成入口和 workspace 持久化 snapshot 读取已补齐；下一步进入 Sandpack 受控预览、版本 UI、导出 zip 和 API/E2E 加固**。
+当前项目处于：**Issue #18 pre-Sandpack 安全边界加固已完成代码落地：Issue #15 P0 项目生成入口、Supabase migration/RLS、版本/生成/导出记录持久化服务边界、server-only OpenAI Responses provider、项目列表生成入口和 workspace 持久化 snapshot 读取已补齐；Issue #18 进一步补齐 user_profiles 首次 upsert、更严格的生成文件路径校验、persisted snapshot 运行时校验和 auth callback returnTo 站内路径限制。下一步进入 Sandpack 受控预览、版本 UI、导出 zip 和 API/E2E 加固**。
 
 理由：
 
@@ -13,18 +13,19 @@
 - 已建立 `src/app`、`src/components`、`src/features`、`src/lib`、`src/server`、`src/schemas`、`src/prompts`、`src/types` 目录边界。
 - 已完成 `npm install`、`npm run test`、`npm run typecheck`、`npm run lint`、`npm run build` 和 production server HTTP 验收。
 - 当前已实现受保护项目列表、P0 新建项目生成表单、workspace 持久化 snapshot 读取，并保留未选项目时的空态工作台入口。
-- 当前已新增 Phase 4/Issue #15 的生成输出 schema、路径安全校验、mock provider、server-only OpenAI Responses provider、生成/迭代编排、版本快照/回退数据边界、导出 manifest 边界和 P0 项目生成入口。
+- 当前已新增 Phase 4/Issue #15 的生成输出 schema、路径安全校验、mock provider、server-only OpenAI Responses provider、生成/迭代编排、版本快照/回退数据边界、导出 manifest 边界和 P0 项目生成入口；Issue #18 已把该边界收紧为 Sandpack 前置安全门槛。
+- 当前已新增 first-time auth user profile upsert、auth returnTo 站内路径校验、`validateVersionSnapshot` 持久化快照运行时校验和 pre-Sandpack safety 行为测试。
 - 当前已新增 Supabase 初始 schema migration SQL 和项目归属 RLS policy SQL。
 - 当前仍未实现 Sandpack runtime、导出 zip 下载、版本历史/回退 UI、完整迭代修改闭环、API/E2E 加固和生产部署配置。真实 OpenAI provider 代码已接入，但本地真实调用仍需要有效 `OPENAI_API_KEY`。
 - 当前已新增版本快照、generation request/result、conversation message 和 export record 的 Drizzle 持久化服务边界；在未配置数据库时保持 no-op，便于本地脚本验证。
 
-因此，当前重点应从 P0 生成入口转向 Sandpack 受控预览、版本历史/回退 UI、最终导出打包、API/E2E 加固，以及独立的 Supabase RLS 性能优化 Issue #14。
+因此，当前重点应从 pre-Sandpack 安全边界转向 Sandpack 受控预览、版本历史/回退 UI、最终导出打包、API/E2E 加固，以及独立的 Supabase RLS 性能优化 Issue #14。Sandpack 只能消费通过 `validateVersionSnapshot` 和生成文件路径 allowlist 的 current version files。
 
 ## 2. 当前已经完成的内容
 
 | 模块 | 当前状态 | 相关文件 | 备注 |
 |---|---|---|---|
-| 项目初始化 | Git 仓库已存在，当前工作分支为 `feat/issue-15-p0-generation-entry`，远程 `origin` 已配置 | `.git/` | Issue #6 已补 Supabase migration/RLS；Issue #13 已完成真实远程验证；Issue #15 已完成 P0 生成入口 |
+| 项目初始化 | Git 仓库已存在，当前工作分支为 `fix/issue-18-pre-sandpack-safety`，远程 `origin` 已配置 | `.git/` | Issue #6 已补 Supabase migration/RLS；Issue #13 已完成真实远程验证；Issue #15 已完成 P0 生成入口；Issue #18 已完成 pre-Sandpack 安全边界加固 |
 | 需求文档 | 已完成第一版产品需求梳理 | `docs/requirements.md` | 覆盖产品定位、MVP/P1/P2、功能需求、非功能需求、导出、多页面、对话修改、局部修改、版本、账号、额度、风险 |
 | PRD | 已完成结构化 PRD | `docs/PRD.md` | 覆盖用户角色、用户流程、页面清单、功能列表、Given/When/Then 验收标准、状态设计、视觉风格、信息架构、MVP 边界 |
 | 架构草案 | 已完成技术栈锁定与架构基线 | `docs/architecture.md` | 锁定 Next.js、TypeScript、Tailwind、Supabase、Drizzle、OpenAI Responses API、Zod、Sandpack、Vercel、Vitest、Playwright 等方向 |
@@ -33,11 +34,11 @@
 | 生成结果展示区 | workspace 读取持久化当前 version snapshot 并展示页面、元数据和代码视图 | `src/features/workspace/components/WorkspacePage.tsx` | 暂未接 Sandpack runtime，不把 fixture 伪装成真实生成结果 |
 | live preview / code view | 代码视图和静态预览已实现；真实 Sandpack 未接入 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | Sandpack 仍只在架构文档中作为后续技术基线 |
 | 项目历史 / 本地存储 | 已建立数据结构和服务端持久化边界 | `src/server/db/schema.ts`、`src/server/versions/versionRepository.ts` | 已有 `project_versions` 最小 schema 和版本写入服务；版本历史 UI 和真实回退闭环仍未实现 |
-| API route / Server Actions | Auth callback、登录/退出和 P0 项目生成 server action 已实现 | `src/app/auth/callback/route.ts`、`src/server/auth/actions.ts`、`src/server/generation/actions.ts` | 导出下载 API、版本回退 action 和完整迭代修改 action 尚未实现 |
+| API route / Server Actions | Auth callback、登录/退出和 P0 项目生成 server action 已实现；auth callback 和 magic link returnTo 已限制为站内路径 | `src/app/auth/callback/route.ts`、`src/server/auth/actions.ts`、`src/server/auth/returnTo.ts`、`src/server/generation/actions.ts` | 导出下载 API、版本回退 action 和完整迭代修改 action 尚未实现 |
 | OpenAI 调用 | 已建立 mock provider 与 server-only OpenAI Responses provider | `src/server/ai/provider.ts`、`src/server/ai/openaiProvider.ts`、`src/prompts/generation.ts`、`docs/architecture.md` | OpenAI key 保持 server-only；本地真实调用需要有效 `OPENAI_API_KEY`；自动化测试使用 mock provider/client |
 | 导出功能 | Phase 4 已建立服务端导出 manifest 和导出记录持久化边界；真实 zip/静态包下载尚未实现 | `src/server/export/exportService.ts`、`src/server/export/exportRepository.ts` | 导出前会复用路径 allowlist，并记录 export 使用次数和 export record；当前不生成下载文件 |
-| 测试文件 | Phase 1/2/3/4/Issue #15 脚本级检查和 Phase 5 行为测试已实现 | `tests/phase1-scaffold.test.mjs`、`tests/phase2-workspace.test.mjs`、`tests/phase3-persistence-auth.test.mjs`、`tests/phase4-generation-preview-export.test.mjs`、`tests/phase4-persistence-records.test.mjs`、`tests/phase5-p0-generation-entry.test.mjs`、`tests/phase5-p0-generation-entry.behavior.test.ts` | 覆盖 scaffold、workspace、auth/db 基础层、Phase 4 服务边界、P0 生成入口空输入/非法路径/成功持久化/错误脱敏行为；API 和 Playwright E2E 仍未建立 |
-| README / 文档 | 架构和项目状态文档已同步 Issue #15 P0 生成入口 | `README.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | requirements 和 PRD 范围未变化；README 后续随 Sandpack、版本 UI 和导出继续更新 |
+| 测试文件 | Phase 1/2/3/4/Issue #15 脚本级检查、Phase 5 行为测试和 Issue #18 pre-Sandpack safety 行为测试已实现 | `tests/phase1-scaffold.test.mjs`、`tests/phase2-workspace.test.mjs`、`tests/phase3-persistence-auth.test.mjs`、`tests/phase4-generation-preview-export.test.mjs`、`tests/phase4-persistence-records.test.mjs`、`tests/phase5-p0-generation-entry.test.mjs`、`tests/phase5-p0-generation-entry.behavior.test.ts`、`tests/pre-sandpack-safety.behavior.test.ts` | 覆盖 scaffold、workspace、auth/db 基础层、Phase 4 服务边界、P0 生成入口空输入/非法路径/成功持久化/错误脱敏、pre-Sandpack 文件路径/snapshot/auth profile/returnTo 安全行为；API 和 Playwright E2E 仍未建立 |
+| README / 文档 | 架构和项目状态文档已同步 Issue #18 pre-Sandpack 安全边界 | `README.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | requirements 和 PRD 范围未变化；README 后续随 Sandpack、版本 UI 和导出继续更新 |
 | 环境变量配置 | 示例已补充 Supabase Auth、Supabase database、OpenAI 占位 | `.env.example` | 不包含真实密钥；真实 `.env` 仍应本地私有 |
 | Git / GitHub / Issue 管理 | 远程已配置；Issue #2 已关闭；本地已有 Phase 2 单文件 commits | `.git/` | `origin` 指向 `https://github.com/GUANXIPENG/claude-design.git`；当前分支尚未 push |
 
@@ -82,7 +83,7 @@
 | 导出功能 | Phase 4 已建立导出 manifest 服务边界和导出记录持久化；静态文件 zip、可编辑项目结构下载仍未实现 | 用户还无法真正下载生成结果 | 是 | Phase 4 后续 |
 | 额度限制 | 已建立 quota schema 和 `recordQuotaUsage` 基础记录服务；额度提示、限制和扣减策略未实现 | 成本控制和未来商业化需要基础记录 | 否，基础记录边界已建立；真实限制逻辑仍需后续补齐 | Phase 3 已完成基础记录，Phase 4/5 补限制与 UI |
 | 部署配置 | Vercel 配置、环境变量、构建脚本缺失 | 无法部署预览或生产环境 | 是，部署前阻塞 | Phase 5 |
-| 测试覆盖 | Phase 1/2/3/4 脚本检查已建立；Supabase migration/RLS 文件检查和真实远程 RLS 行为验证已完成；Vitest、schema fixtures、API 测试、Playwright 未建立 | 目前能验证 scaffold、前端壳、Auth/DB 基础层、Phase 4 服务边界、RLS SQL 存在性和真实远程 RLS 隔离；仍缺 API 和 E2E | 是，至少最小业务/安全测试仍阻塞可发布 MVP | Phase 5 |
+| 测试覆盖 | Phase 1/2/3/4 脚本检查、Issue #15 生成入口行为测试和 Issue #18 pre-Sandpack safety Vitest 测试已建立；API 测试、Playwright 未建立 | 目前能验证 scaffold、前端壳、Auth/DB 基础层、Phase 4 服务边界、RLS SQL 存在性、真实远程 RLS 隔离、P0 生成入口和 pre-Sandpack 文件/snapshot/auth 安全边界；仍缺 API 和 E2E | 是，至少最小业务/安全测试仍阻塞可发布 MVP | Phase 5 |
 
 ## 4. 已知问题和阻塞点
 
@@ -255,7 +256,7 @@
 
 ### Phase 4 后续细分路线
 
-Phase 4 foundation 和 Issue #15 P0 生成入口已完成，但它们仍不等于完整产品闭环。下表保留原拆分顺序；第 1 项 Supabase migration/RLS、第 2 项持久化服务边界、第 3 项 OpenAI provider、第 4 项生成入口已经完成，当前不再作为待办。
+Phase 4 foundation、Issue #15 P0 生成入口和 Issue #18 pre-Sandpack 安全边界加固已完成，但它们仍不等于完整产品闭环。下表保留原拆分顺序；第 1 项 Supabase migration/RLS、第 2 项持久化服务边界、第 3 项 OpenAI provider、第 4 项生成入口已经完成，当前不再作为待办。Sandpack runtime 应从已校验的 current version snapshot 开始接入。
 
 | 顺序 | 建议 Issue 标题 | 目标 | 非目标 | 验收标准 | 必跑检查 |
 |---|---|---|---|---|---|
@@ -401,7 +402,7 @@ Phase 4 foundation 和 Issue #15 P0 生成入口已完成，但它们仍不等�
 
 ### 当前代码质量结论
 
-- 文档质量较完整，已经同步 Phase 4 基础层、真实 Supabase migration/RLS 验证和 Issue #15 P0 生成入口，并继续指导后续 Sandpack runtime、版本 UI、RLS 性能优化与导出打包。
+- 文档质量较完整，已经同步 Phase 4 基础层、真实 Supabase migration/RLS 验证、Issue #15 P0 生成入口和 Issue #18 pre-Sandpack 安全边界，并继续指导后续 Sandpack runtime、版本 UI、RLS 性能优化与导出打包。
 - 工程已有可运行 scaffold、Phase 2 前端壳、Phase 3 认证/持久化基础层、Phase 4 生成/版本/导出服务边界和 Issue #15 生成入口。
 - 不应把历史 fixture、mock provider、当前 metadata/code preview 误认为 Sandpack 运行时、导出下载或版本回退闭环；项目列表和 workspace 已不再使用 fixture 作为生产数据源。
 - 下一步最重要的是接入 Sandpack 受控预览、版本历史 UI、导出 zip、API/E2E 加固和 RLS 性能优化。
@@ -708,6 +709,46 @@ Not completed in this stage:
 - OpenAI key creation was attempted through the OpenAI Platform connector, but
   the connector failed during MCP handshake. A valid local `OPENAI_API_KEY` is
   still required for real provider calls.
+
+Next MVP order:
+
+1. Connect Sandpack controlled preview to the validated current version files.
+2. Add version history and rollback UI.
+3. Add zip/static export download.
+4. Add API/E2E tests and deployment configuration hardening.
+5. Keep Issue #14 as an independent RLS performance optimization task.
+
+## 19. 2026-05-24 Issue #18 pre-Sandpack safety boundary hardening
+
+Current stage: pre-Sandpack safety hardening is implemented in code. The next
+MVP development step remains Sandpack controlled preview, but it should now use
+the stricter generated file and persisted snapshot boundaries added here.
+
+Completed in this stage:
+
+- Created Issue #18: `fix: harden pre-sandpack safety boundaries`.
+- Added first-time auth user profile upsert via
+  `src/server/auth/userProfile.ts`, `requireCurrentUser`, and the Supabase auth
+  callback.
+- Added shared auth `returnTo` sanitization so login callbacks and magic-link
+  redirects only accept same-origin paths.
+- Tightened generated file path validation so AI output cannot include Next.js
+  route handlers, server actions, middleware, package manifests, dependency
+  folders, environment files, shell scripts, or other sensitive paths.
+- Added `validateVersionSnapshot` and applied it before workspace reads use a
+  persisted current version snapshot.
+- Added `tests/pre-sandpack-safety.behavior.test.ts` and included it in
+  `npm.cmd run test`.
+- Updated homepage and login copy so the UI no longer describes the product as
+  a Phase 2 fixture-only shell.
+
+Not completed in this stage:
+
+- Sandpack runtime preview is not implemented.
+- Version history UI and rollback UI are not implemented.
+- Zip/static export download is not implemented.
+- Full API/E2E test hardening is not implemented.
+- Issue #14 RLS performance advisor optimization remains separate.
 
 Next MVP order:
 

@@ -106,6 +106,15 @@ const workspacePage = readText("src/features/workspace/components/WorkspacePage.
 ].forEach((marker) => assert.match(workspacePage, new RegExp(marker)));
 assert.doesNotMatch(workspacePage, /primaryFixtureProject/);
 
+const homePage = readText("src/app/page.tsx");
+assert.match(homePage, /P0 generation entry/);
+assert.doesNotMatch(homePage, /Phase 2 front-end loop/);
+assert.doesNotMatch(homePage, /fixture-driven prototype shell/);
+
+const loginPage = readText("src/app/login/page.tsx");
+assert.match(loginPage, /server-side generation/);
+assert.doesNotMatch(loginPage, /AI generation remains a later Phase 4 capability/);
+
 const envExample = readText(".env.example");
 assert.match(envExample, /OPENAI_MODEL=gpt-5\.5/);
 

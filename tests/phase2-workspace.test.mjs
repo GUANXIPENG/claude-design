@@ -41,13 +41,11 @@ const workspace = readText("src/features/workspace/components/WorkspacePage.tsx"
 assert.match(workspace, /"use client"/);
 assert.match(workspace, /WorkspacePage/);
 assert.match(workspace, /selectedPageId/);
-assert.match(workspace, /draft/);
 assert.match(workspace, /setSelectedPageId/);
-assert.match(workspace, /Please describe what to generate or change/);
-assert.match(workspace, /Generating fixture preview/);
-assert.match(workspace, /Fixture update ready/);
-assert.match(workspace, /fixture content/);
-assert.match(workspace, /No AI request is being sent from the browser/);
+assert.match(workspace, /workspaceProject/);
+assert.match(workspace, /persisted current version snapshot/);
+assert.match(workspace, /No project selected/);
+assert.match(workspace, /Sandpack pending/);
 assert.match(workspace, /Code view/);
 
 console.log("Phase 2 workspace checks passed.");

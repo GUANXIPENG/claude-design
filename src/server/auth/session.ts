@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { ensureUserProfile } from "@/server/auth/userProfile";
 
 export type AuthUser = {
   id: string;
@@ -84,6 +85,8 @@ export async function requireCurrentUser(returnTo = "/projects"): Promise<AuthUs
   if (!user) {
     redirect(`/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
+
+  await ensureUserProfile({ user });
 
   return user;
 }

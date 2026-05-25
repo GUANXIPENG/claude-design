@@ -1,12 +1,12 @@
 # AI Design Workspace 技术栈锁定与架构草案
 
-最后更新：2026-05-24
+最后更新：2026-05-25
 
 ## 1. 文档定位与当前仓库状态
 
 本文档是当前 MVP 阶段的技术决策基线，用于指导“类似 Claude Design 的 AI 设计生成网站”的持续实现。它不是永久架构，也不是最终工程实现说明。后续每次重要架构变化都必须在本文档的 ADR 记录中说明：为什么要改、改了什么、影响哪些模块、是否引入新风险、是否影响 MVP 范围。
 
-当前仓库已经包含 Phase 1 scaffold、Phase 2 前端工作台壳、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、Issue #15 server-only OpenAI Responses provider 与 P0 项目生成入口、Issue #18 pre-Sandpack user profile upsert、严格生成文件路径校验、persisted snapshot 运行时校验和 auth callback returnTo 站内路径限制，以及已在真实 Supabase 项目验证通过的 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
+当前仓库已经包含 Phase 1 scaffold、Phase 2 前端工作台壳、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、Issue #15 server-only OpenAI Responses provider 与 P0 项目生成入口、Issue #18 pre-Sandpack user profile upsert、严格生成文件路径校验、persisted snapshot 运行时校验和 auth callback returnTo 站内路径限制、Issue #19 Sandpack readiness service-only business writes、prompt/file limit 和规范化 snapshot 返回，以及已在真实 Supabase 项目验证通过的初始 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
 
 ### 1.1 已读取的仓库内容
 
@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider 与 P0 项目生成入口已落地。仍未完成 Sandpack runtime、导出 zip 下载、版本历史/回退 UI、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口和 Sandpack 前置安全门槛已落地。仍未完成 Sandpack runtime、导出 zip 下载、版本历史/回退 UI、Playwright E2E 和生产部署配置。
 
 ### 1.2 架构目标
 
@@ -876,6 +876,10 @@ MVP 基线采用：
 - 前端组件不访问数据库。
 - UI 不直接调用 AI provider。
 - 生成结果必须服务端校验后才能保存、预览和导出。
+- 生成 prompt 必须在服务端校验非空且不超过 4000 字符，客户端 `maxLength` 只能作为 UI 辅助。
+- 生成文件必须限制为最多 30 files、单文件最大 200KB、总计最大 1MB。
+- `sanitizeGeneratedProject` 和 `validateVersionSnapshot` 必须返回规范化后的安全路径，页面引用、预览和导出不能使用未规范化路径。
+- 业务表写入采用 service-only business writes 优先，浏览器 authenticated client 不能绕过服务端编排直接写项目、版本、生成、导出或额度数据。
 - localStorage 不能作为项目主存储。
 - Sandpack 不是完整安全策略，只是预览运行环境的一部分。
 - 架构变化必须写 ADR。
@@ -1230,3 +1234,59 @@ as untrusted runtime data instead of relying on TypeScript casts.
 
 No P1/P2 scope is added. This ADR only hardens the existing P0 generation,
 auth, persistence, and preview-read boundaries before the Sandpack stage.
+
+## ADR-0008: Sandpack Readiness Safety Gate
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #19 closes the remaining blockers before generated files can be connected
+to a live Sandpack preview. Code review found that authenticated browser clients
+could still write business tables through Supabase Data API policies, generated
+file paths were validated but not always returned in canonical form, prompt
+length was only guarded by the client UI, and generated file count/size limits
+were missing.
+
+### Decision
+
+- Add `supabase/policies/0002_service_only_writes.sql` to drop authenticated
+  write policies and revoke direct INSERT/UPDATE/DELETE grants for business
+  tables. Service-side orchestration remains responsible for Zod validation,
+  path checks, owner checks, quota records, version writes, and export records.
+- Add a shared generation prompt schema. Server-side generation entry points
+  reject empty prompts and prompts longer than 4000 characters.
+- Limit generated output to 30 files, 200KB per file, and 1MB total file
+  content before saving, previewing, or exporting.
+- Return canonical safe paths from `sanitizeGeneratedProject` and
+  `validateVersionSnapshot`; duplicate paths after canonicalization are
+  rejected.
+- Keep Sandpack on the minimal controlled policy chosen for MVP: fixed React
+  template, no AI-supplied dependency manifest, no arbitrary package scripts,
+  and no expanded external resource capability.
+
+### Consequences
+
+- Sandpack can consume a validated `VersionSnapshot` without reconciling raw AI
+  path variants in the browser.
+- Browser code still cannot call OpenAI, service-role database clients, or
+  write project/version/export/quota records directly.
+- Future iterate, rollback, and export stages must reuse the same prompt,
+  snapshot, path, and file-limit schemas.
+
+### Risks
+
+- The service-only business writes SQL must be applied to the real Supabase
+  project before production release; the repository test verifies markers but
+  does not mutate the remote database.
+- The 30 files / 200KB / 1MB limits are intentionally conservative and may need
+  a later ADR if richer prototypes require larger assets.
+- Issue #14 RLS performance optimization remains independent and should not be
+  mixed into Sandpack implementation unless it becomes a deployment blocker.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR only closes the safety gate required before
+the MVP Sandpack controlled preview stage.

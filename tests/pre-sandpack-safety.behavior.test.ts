@@ -48,6 +48,9 @@ describe("pre-Sandpack generated file safety", () => {
     const { validateGeneratedFilePath } = await import("../src/schemas/generation");
 
     expect(validateGeneratedFilePath("app/page.tsx")).toBe("app/page.tsx");
+    expect(validateGeneratedFilePath("app\\dashboard//page.tsx")).toBe(
+      "app/dashboard/page.tsx"
+    );
     expect(validateGeneratedFilePath("app/dashboard/page.tsx")).toBe(
       "app/dashboard/page.tsx"
     );
@@ -56,6 +59,156 @@ describe("pre-Sandpack generated file safety", () => {
     );
     expect(validateGeneratedFilePath("styles/theme.css")).toBe("styles/theme.css");
     expect(validateGeneratedFilePath("README.md")).toBe("README.md");
+  });
+
+  it("returns canonical file paths from generated project sanitization", async () => {
+    const { sanitizeGeneratedProject } = await import("../src/schemas/generation");
+
+    const project = sanitizeGeneratedProject({
+      files: [
+        {
+          content: "export default function Dashboard() { return <main />; }",
+          path: "app\\dashboard//page.tsx"
+        }
+      ],
+      mode: "generate",
+      navigation: [],
+      pages: [
+        {
+          filePath: "app/dashboard/page.tsx",
+          id: "dashboard",
+          name: "Dashboard",
+          purpose: "Main dashboard",
+          route: "/dashboard"
+        }
+      ],
+      project: {
+        defaultStyle: "Clean",
+        description: "Canonical path project",
+        name: "Canonical Project"
+      },
+      summary: "Canonical output",
+      warnings: []
+    });
+
+    expect(project.files[0]?.path).toBe("app/dashboard/page.tsx");
+    expect(project.pages[0]?.filePath).toBe("app/dashboard/page.tsx");
+  });
+
+  it("rejects duplicate generated paths after canonicalization", async () => {
+    const { sanitizeGeneratedProject } = await import("../src/schemas/generation");
+
+    expect(() =>
+      sanitizeGeneratedProject({
+        files: [
+          {
+            content: "export default function Page() { return <main />; }",
+            path: "app\\dashboard/page.tsx"
+          },
+          {
+            content: "export default function OtherPage() { return <main />; }",
+            path: "app/dashboard//page.tsx"
+          }
+        ],
+        mode: "generate",
+        navigation: [],
+        pages: [
+          {
+            filePath: "app/dashboard/page.tsx",
+            id: "dashboard",
+            name: "Dashboard",
+            purpose: "Main dashboard",
+            route: "/dashboard"
+          }
+        ],
+        project: {
+          defaultStyle: "Clean",
+          description: "Duplicate path project",
+          name: "Duplicate Project"
+        },
+        summary: "Duplicate output",
+        warnings: []
+      })
+    ).toThrow(/duplicated/i);
+  });
+
+  it("rejects generated projects that exceed file count or byte limits", async () => {
+    const { sanitizeGeneratedProject } = await import("../src/schemas/generation");
+
+    const baseProject = {
+      mode: "generate",
+      navigation: [],
+      pages: [
+        {
+          filePath: "app/page.tsx",
+          id: "home",
+          name: "Home",
+          purpose: "Home page",
+          route: "/"
+        }
+      ],
+      project: {
+        defaultStyle: "Clean",
+        description: "File limits project",
+        name: "File Limits"
+      },
+      summary: "File limit output",
+      warnings: []
+    } as const;
+
+    expect(() =>
+      sanitizeGeneratedProject({
+        ...baseProject,
+        files: [
+          {
+            content: "export default function Home() { return <main />; }",
+            path: "app/page.tsx"
+          },
+          ...Array.from({ length: 30 }, (_, index) => ({
+            content: "export function Component() { return null; }",
+            path: `components/Extra${index}.tsx`
+          }))
+        ]
+      })
+    ).toThrow(/30 files/i);
+
+    expect(() =>
+      sanitizeGeneratedProject({
+        ...baseProject,
+        files: [
+          {
+            content: "x".repeat(200 * 1024 + 1),
+            path: "app/page.tsx"
+          }
+        ]
+      })
+    ).toThrow(/200KB/i);
+
+    expect(() =>
+      sanitizeGeneratedProject({
+        ...baseProject,
+        files: [
+          {
+            content: "export default function Home() { return <main />; }",
+            path: "app/page.tsx"
+          },
+          ...Array.from({ length: 6 }, (_, index) => ({
+            content: "x".repeat(180 * 1024),
+            path: `components/Large${index}.tsx`
+          }))
+        ]
+      })
+    ).toThrow(/1MB/i);
+  });
+
+  it("rejects empty and overlong generation prompts at schema level", async () => {
+    const { validateGenerationPrompt } = await import("../src/schemas/generation");
+
+    expect(() => validateGenerationPrompt("   ")).toThrow(/prompt/i);
+    expect(() => validateGenerationPrompt("x".repeat(4001))).toThrow(/4000/i);
+    expect(validateGenerationPrompt("  Build a CRM prototype  ")).toBe(
+      "Build a CRM prototype"
+    );
   });
 });
 
@@ -116,6 +269,67 @@ describe("pre-Sandpack snapshot safety", () => {
         summary: "Missing file"
       })
     ).toThrow(/missing file/i);
+  });
+
+  it("returns canonical snapshot file keys and page references", async () => {
+    const { validateVersionSnapshot } = await import("../src/schemas/generation");
+
+    const snapshot = validateVersionSnapshot({
+      files: {
+        "app\\dashboard//page.tsx": "export default function Dashboard() { return <main />; }"
+      },
+      navigation: [],
+      pages: [
+        {
+          filePath: "app/dashboard/page.tsx",
+          id: "dashboard",
+          name: "Dashboard",
+          purpose: "Dashboard page",
+          route: "/dashboard"
+        }
+      ],
+      project: {
+        defaultStyle: "Clean",
+        description: "Canonical snapshot",
+        name: "Canonical Snapshot"
+      },
+      prototypeBoundaryNotice: "Prototype only.",
+      summary: "Canonical snapshot"
+    });
+
+    expect(Object.keys(snapshot.files)).toEqual(["app/dashboard/page.tsx"]);
+    expect(snapshot.pages[0]?.filePath).toBe("app/dashboard/page.tsx");
+  });
+
+  it("rejects duplicate snapshot file keys after canonicalization", async () => {
+    const { validateVersionSnapshot } = await import("../src/schemas/generation");
+
+    expect(() =>
+      validateVersionSnapshot({
+        files: {
+          "app\\dashboard/page.tsx": "export default function Dashboard() { return <main />; }",
+          "app/dashboard//page.tsx":
+            "export default function OtherDashboard() { return <main />; }"
+        },
+        navigation: [],
+        pages: [
+          {
+            filePath: "app/dashboard/page.tsx",
+            id: "dashboard",
+            name: "Dashboard",
+            purpose: "Dashboard page",
+            route: "/dashboard"
+          }
+        ],
+        project: {
+          defaultStyle: "Clean",
+          description: "Duplicate snapshot",
+          name: "Duplicate Snapshot"
+        },
+        prototypeBoundaryNotice: "Prototype only.",
+        summary: "Duplicate snapshot"
+      })
+    ).toThrow(/duplicated/i);
   });
 });
 

@@ -35,8 +35,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <p className="mt-4 text-sm leading-6 text-muted">
               The lightweight account boundary protects project ownership,
               private project access, database persistence, quota records, and
-              server-side generation. Sandpack preview, version UI, and zip
-              export remain later MVP stages.
+              server-side generation. Version UI, zip export, and API/E2E
+              hardening remain later MVP stages.
             </p>
           </div>
           <div className="rounded-lg border border-line bg-white p-5 shadow-sm">

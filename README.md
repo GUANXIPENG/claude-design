@@ -1,6 +1,6 @@
 # AI Design Workspace
 
-Issue #19 closes the Sandpack readiness blockers on top of the existing
+Issue #20 connects the controlled Sandpack preview on top of the existing
 authenticated P0 project generation, auth, persistence, schema, and version
 foundations.
 
@@ -28,10 +28,10 @@ This is not the full MVP. The app now establishes:
 - Pre-Sandpack safety gates for service-only business writes, server-side prompt
   validation, canonical generated file paths, and generated file size/count
   limits.
-- Phase 1 through Phase 5 verification scripts.
+- Controlled Sandpack preview for validated current-version snapshots.
+- Phase 1 through Phase 6 verification scripts.
 
-The workspace still uses a metadata/code preview rather than Sandpack. Sandpack
-runtime preview, export packaging, version rollback UI, and real payment or
+Version rollback UI, export packaging, API/E2E hardening, and real payment or
 subscription logic are intentionally not implemented yet.
 
 ## Setup
@@ -80,8 +80,8 @@ server-only. Browser code may only use the public Supabase URL and anon key.
 
 ## Project Boundaries
 
-Issue #19 keeps the first authenticated generation entry behind stricter
-pre-Sandpack safety gates. Future work should keep business logic out of
+Issue #20 keeps the controlled Sandpack preview behind validated snapshot and
+server-side safety gates. Future work should keep business logic out of
 `src/app` route files where possible and use:
 
 - `src/features` for frontend product areas.

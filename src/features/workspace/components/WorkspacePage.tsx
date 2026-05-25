@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { VersionSnapshot } from "@/schemas/generation";
+import { ControlledSandpackPreview } from "@/features/preview/components/ControlledSandpackPreview";
 
 type ProjectWorkspaceSnapshot = {
   currentVersion: {
@@ -121,34 +122,20 @@ export function WorkspacePage({ authUserEmail, workspaceProject }: WorkspacePage
         <section className="min-h-[560px] p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold">Preview metadata</h2>
+              <h2 className="text-sm font-semibold">Live preview</h2>
               <p className="text-xs text-muted">
                 {selectedPage?.purpose ?? "This project has no generated pages yet."}
               </p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-xs text-muted">
-              Sandpack pending
+              Validated snapshot only
             </span>
           </div>
 
-          <div className="rounded-lg border border-line bg-white p-6 shadow-sm">
-            <div className="rounded-md border border-line bg-canvas p-6">
-              <p className="text-xs font-medium uppercase tracking-[0.12em] text-accent">
-                Prototype boundary
-              </p>
-              <h3 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight">
-                {snapshot?.project.name ?? workspaceProject.project.name}
-              </h3>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
-                {snapshot?.project.description ??
-                  workspaceProject.project.description ??
-                  "No generated description was saved."}
-              </p>
-              <p className="mt-4 max-w-2xl text-xs leading-5 text-muted">
-                {snapshot?.prototypeBoundaryNotice}
-              </p>
-            </div>
-          </div>
+          <ControlledSandpackPreview
+            selectedFilePath={selectedPage?.filePath ?? null}
+            snapshot={snapshot}
+          />
 
           <div className="mt-4 rounded-lg border border-line bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
@@ -164,8 +151,8 @@ export function WorkspacePage({ authUserEmail, workspaceProject }: WorkspacePage
         <aside className="border-t border-line bg-white p-4 lg:border-l lg:border-t-0">
           <div className="mb-4 rounded-md border border-line bg-canvas p-3 text-xs leading-5 text-muted">
             The current workspace displays persisted prototype metadata and safe
-            generated files. Sandpack runtime, version history UI, rollback UI,
-            and zip export are separate MVP stages.
+            generated files in a controlled Sandpack preview. Version history UI,
+            rollback UI, and zip export are separate MVP stages.
           </div>
 
           <div className="mb-4 rounded-lg border border-line p-3">

@@ -1,7 +1,8 @@
 # AI Design Workspace
 
-Issue #15 adds the first authenticated P0 project generation entry on top of
-the existing scaffold, auth, persistence, schema, and version foundations.
+Issue #19 closes the Sandpack readiness blockers on top of the existing
+authenticated P0 project generation, auth, persistence, schema, and version
+foundations.
 
 ## Current Stage
 
@@ -24,6 +25,9 @@ This is not the full MVP. The app now establishes:
   versions, generation records, conversation messages, and quota usage records.
 - Workspace loading from `/workspace?projectId=<id>` using the persisted current
   version snapshot.
+- Pre-Sandpack safety gates for service-only business writes, server-side prompt
+  validation, canonical generated file paths, and generated file size/count
+  limits.
 - Phase 1 through Phase 5 verification scripts.
 
 The workspace still uses a metadata/code preview rather than Sandpack. Sandpack
@@ -76,9 +80,9 @@ server-only. Browser code may only use the public Supabase URL and anon key.
 
 ## Project Boundaries
 
-Issue #15 connects the first authenticated generation entry and lets the
-workspace read a persisted current version snapshot. Future work should keep
-business logic out of `src/app` route files where possible and use:
+Issue #19 keeps the first authenticated generation entry behind stricter
+pre-Sandpack safety gates. Future work should keep business logic out of
+`src/app` route files where possible and use:
 
 - `src/features` for frontend product areas.
 - `src/lib/fixtures` for mock data that must not become the production data

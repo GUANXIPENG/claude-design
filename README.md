@@ -1,8 +1,8 @@
 # AI Design Workspace
 
-Issue #20 connects the controlled Sandpack preview on top of the existing
-authenticated P0 project generation, auth, persistence, schema, and version
-foundations.
+Issue #21 connects version history and project-level rollback UI on top of the
+existing authenticated P0 project generation, auth, persistence, schema, and
+controlled Sandpack preview foundations.
 
 ## Current Stage
 
@@ -29,10 +29,12 @@ This is not the full MVP. The app now establishes:
   validation, canonical generated file paths, and generated file size/count
   limits.
 - Controlled Sandpack preview for validated current-version snapshots.
-- Phase 1 through Phase 6 verification scripts.
+- Version history UI with historical preview, second confirmation, and
+  project-level rollback that creates a new current version record.
+- Phase 1 through Phase 7 verification scripts.
 
-Version rollback UI, export packaging, API/E2E hardening, and real payment or
-subscription logic are intentionally not implemented yet.
+Export packaging, API/E2E hardening, and real payment or subscription logic are
+intentionally not implemented yet.
 
 ## Setup
 
@@ -80,8 +82,8 @@ server-only. Browser code may only use the public Supabase URL and anon key.
 
 ## Project Boundaries
 
-Issue #20 keeps the controlled Sandpack preview behind validated snapshot and
-server-side safety gates. Future work should keep business logic out of
+Issue #21 keeps version history and rollback behind server-side owner checks and
+validated snapshot boundaries. Future work should keep business logic out of
 `src/app` route files where possible and use:
 
 - `src/features` for frontend product areas.
@@ -91,6 +93,8 @@ server-side safety gates. Future work should keep business logic out of
 - `src/server/db` for Drizzle schema and database client setup.
 - `src/server/projects` for project ownership and persistence logic.
 - `src/server/quota` for operation-count quota records.
+- `src/server/versions` for version history, snapshot validation, and rollback
+  orchestration.
 - `src/schemas` for runtime validation.
 - `src/prompts` for auditable prompt templates.
 - `src/types` for shared TypeScript types.

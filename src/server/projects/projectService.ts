@@ -8,6 +8,11 @@ import {
   type ProjectWorkspaceRecord,
   type ProjectSummary
 } from "@/server/projects/projectRepository";
+import {
+  listProjectVersionsByOwner,
+  rollbackProjectVersionByOwner,
+  type ProjectVersionHistoryRecord
+} from "@/server/versions/versionRepository";
 import { projectCreateSchema, type ProjectCreateInput } from "@/schemas/project";
 
 export async function listProjectsForCurrentUser(): Promise<ProjectSummary[]> {
@@ -27,4 +32,24 @@ export async function getWorkspaceProjectForCurrentUser(
 ): Promise<ProjectWorkspaceRecord | null> {
   const user = await requireCurrentUser(`/workspace?projectId=${projectId}`);
   return getProjectWorkspaceByOwner(user.id, projectId);
+}
+
+export async function listProjectVersionsForCurrentUser(
+  projectId: string
+): Promise<ProjectVersionHistoryRecord[]> {
+  const user = await requireCurrentUser(`/workspace?projectId=${projectId}`);
+  return listProjectVersionsByOwner(user.id, projectId);
+}
+
+export async function rollbackProjectVersionForCurrentUser(input: {
+  projectId: string;
+  versionId: string;
+}) {
+  const user = await requireCurrentUser(`/workspace?projectId=${input.projectId}`);
+
+  return rollbackProjectVersionByOwner({
+    ownerId: user.id,
+    projectId: input.projectId,
+    versionId: input.versionId
+  });
 }

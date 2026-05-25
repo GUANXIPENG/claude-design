@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { validateGenerationPrompt } from "@/schemas/generation";
 import { requireCurrentUser } from "@/server/auth/session";
 import { createProjectFromPrompt as createProjectFromPromptService } from "@/server/generation/projectGenerationService";
 
@@ -10,10 +11,16 @@ const GENERATION_ERROR =
 export async function createProjectFromPrompt(formData: FormData) {
   const user = await requireCurrentUser("/projects");
   const rawPrompt = formData.get("prompt");
-  const prompt = typeof rawPrompt === "string" ? rawPrompt.trim() : "";
+  let prompt: string;
 
-  if (!prompt) {
-    redirect(`/projects?error=${encodeURIComponent("Please describe the prototype before generating.")}`);
+  try {
+    prompt = validateGenerationPrompt(rawPrompt);
+  } catch {
+    redirect(
+      `/projects?error=${encodeURIComponent(
+        "Please describe the prototype in 4000 characters or fewer."
+      )}`
+    );
   }
 
   let projectId: string;

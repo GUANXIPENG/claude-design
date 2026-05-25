@@ -45,8 +45,7 @@ const projectGenerationService = readText("src/server/generation/projectGenerati
   "createProjectFromPrompt",
   "ProjectGenerationPersistence",
   "persistSuccessfulProjectGeneration",
-  "prompt.trim()",
-  "Generated project prompt is required",
+  "validateGenerationPrompt",
   "createOpenAiResponsesProvider"
 ].forEach((marker) => assert.match(projectGenerationService, new RegExp(marker)));
 

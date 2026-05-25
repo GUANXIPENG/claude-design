@@ -45,7 +45,7 @@ assert.match(workspace, /setSelectedPageId/);
 assert.match(workspace, /workspaceProject/);
 assert.match(workspace, /persisted current version snapshot/);
 assert.match(workspace, /No project selected/);
-assert.match(workspace, /Sandpack pending/);
+assert.match(workspace, /ControlledSandpackPreview/);
 assert.match(workspace, /Code view/);
 
 console.log("Phase 2 workspace checks passed.");

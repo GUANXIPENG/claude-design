@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口、Sandpack 前置安全门槛和 Sandpack controlled preview 已落地。仍未完成导出 zip 下载、版本历史/回退 UI、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口、Sandpack 前置安全门槛、Sandpack controlled preview、版本历史和项目级回退 UI 已落地。仍未完成导出 zip 下载、Playwright E2E 和生产部署配置。
 
 ### 1.2 架构目标
 
@@ -837,7 +837,7 @@ MVP 基线采用：
 | 问题 | 说明 | 推荐处理 |
 |---|---|---|
 | PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而架构文档需要锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
-| Phase 4/Issue #15 基础层不等于完整 MVP 闭环 | 当前已有 schema、mock provider、server-only OpenAI provider、P0 生成入口、版本/生成/对话/导出持久化边界、导出 manifest 服务边界和 Sandpack controlled preview，但版本历史 UI、完整迭代修改和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“生成入口/预览已实现”和“完整 MVP 闭环未实现” |
+| Phase 4/Issue #15 基础层不等于完整 MVP 闭环 | 当前已有 schema、mock provider、server-only OpenAI provider、P0 生成入口、版本/生成/对话/导出持久化边界、导出 manifest 服务边界、Sandpack controlled preview 和 Issue #21 版本历史/回退 UI，但完整迭代修改、zip 下载和 API/E2E 加固尚未完成 | 在 PROJECT_STATUS 中持续区分“生成入口/预览/回退已实现”和“完整 MVP 闭环未实现” |
 | Supabase RLS 已验证但仍有性能优化项 | 真实 Supabase migration/RLS 已执行并验证跨用户隔离；performance advisor 提示 `auth_rls_initplan` | Issue #14 优化 policy 中适用的 `auth.uid()` 调用为 `(select auth.uid())` 并复跑 advisor |
 
 ### 6.2 待确认问题
@@ -1005,7 +1005,7 @@ Phase 4 基础层采用：
 #### 后续动作
 
 - 用真实 OpenAI Responses API provider 替换 mock provider，并保留同一 `AiProvider` 接口。
-- Sandpack controlled preview 已由 ADR-0009 接入；下一步补版本历史 UI、导出 zip 和 API/E2E 加固。
+- Sandpack controlled preview 已由 ADR-0009 接入；版本历史和项目级回退 UI 已由 ADR-0010 接入；下一步补导出 zip 和 API/E2E 加固。
 - 版本快照、生成记录、对话记录和导出记录写入 Supabase 的 repository 边界已由 ADR-0005 落地；真实数据库 schema/RLS 验证已由 Issue #13 完成。
 - 实现导出 zip / 静态包下载。
 
@@ -1080,7 +1080,7 @@ Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、�
 
 该顺序不改变 MVP 范围；它只是把 ADR-0003 后续动作拆成可验证的工程步骤。
 
-注：第 3、4 项已由 ADR-0006 / Issue #15 完成，第 5 项已由 ADR-0009 / Issue #20 完成。当前剩余 MVP 路线从版本 UI 开始，随后是导出 zip 和 API/E2E 加固。
+注：第 3、4 项已由 ADR-0006 / Issue #15 完成，第 5 项已由 ADR-0009 / Issue #20 完成，第 6 项已由 ADR-0010 / Issue #21 完成。当前剩余 MVP 路线从导出 zip 开始，随后是 API/E2E 加固。
 
 ### ADR-0005: 落地版本、生成、对话和导出记录持久化服务边界
 
@@ -1167,8 +1167,8 @@ and quota usage.
 
 - The first P0 generation entry is now connected to the existing auth, project,
   version, conversation, generation-result, and quota boundaries.
-- Zip export, version history UI, rollback UI, and full iterative modification
-  remain separate MVP stages.
+- Zip export and full iterative modification remain separate MVP stages.
+  Version history and rollback UI have since landed in ADR-0010.
 - Provider failures are surfaced to the project list as a generic user-facing
   error. Raw provider errors and keys are not exposed to browser code.
 
@@ -1182,8 +1182,9 @@ and quota usage.
 
 ### MVP Scope Impact
 
-No P1/P2 scope is added. This ADR implements the existing P0 generation entry
-and keeps preview runtime, export packaging, and version UI for later stages.
+No P1/P2 scope is added. This ADR implements the existing P0 generation entry.
+Preview runtime has since landed in ADR-0009, and version UI has since landed in
+ADR-0010; export packaging remains a later stage.
 
 ## ADR-0007: Pre-Sandpack Safety Boundary Hardening
 
@@ -1211,8 +1212,8 @@ as untrusted runtime data instead of relying on TypeScript casts.
   environment files, and other sensitive paths.
 - Add `validateVersionSnapshot` and use it in the project repository before a
   persisted current version snapshot reaches the workspace UI.
-- Keep export zip packaging, version history UI, and rollback UI as later MVP
-  stages.
+- Keep export zip packaging as a later MVP stage. Version history and rollback
+  UI have since landed in ADR-0010.
 
 ### Consequences
 
@@ -1317,8 +1318,9 @@ database service-role clients, or project write APIs.
   manifests, custom dependencies, package scripts, or expanded external
   resources.
 - Keep code view and prototype boundary messaging visible in the workspace.
-- Preserve version history, rollback UI, export zip, runtime repair loops, and
-  click-to-select DOM mapping as later MVP stages.
+- Preserve export zip, runtime repair loops, and click-to-select DOM mapping as
+  later MVP stages. Version history and rollback UI have since landed in
+  ADR-0010.
 
 ### Consequences
 
@@ -1345,4 +1347,64 @@ database service-role clients, or project write APIs.
 ### MVP Scope Impact
 
 No P1/P2 scope is added. This ADR implements the existing MVP controlled preview
-stage and keeps version UI, export, and deployment hardening separate.
+stage. Version UI has since landed in ADR-0010; export and deployment hardening
+remain separate stages.
+
+## ADR-0010: Version History And Project Rollback UI
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #21 implements the MVP version history and rollback step after Sandpack
+controlled preview. The repository already persists project versions and the
+workspace already loads a validated current-version snapshot, so rollback must
+reuse those server-side boundaries instead of trusting browser-supplied owner or
+snapshot data.
+
+### Decision
+
+- Add owner-scoped version repository functions for listing, reading, and
+  rolling back project versions.
+- Load version history in the `/workspace` server route using the current
+  authenticated user and project id.
+- Add `rollbackVersionAction` as the only browser-triggered rollback entry. It
+  accepts `projectId` and `versionId`, then resolves the current user on the
+  server.
+- Do not accept `ownerId`, raw snapshot data, or version metadata from the
+  browser for rollback writes.
+- Re-run `validateVersionSnapshot` before returning historical versions or
+  persisting a rollback-derived version.
+- Persist rollback as a new current project version with `reason: "rollback"`;
+  historical version rows are not mutated.
+- Let the workspace preview a historical version snapshot without changing the
+  current version until the user confirms restore.
+- Keep page-level rollback, version branching, cross-version merge, and visual
+  diff out of the MVP stage.
+
+### Consequences
+
+- Users can inspect prior project-level snapshots and restore a known-good
+  version without losing the state that existed immediately before rollback.
+- The browser can display historical snapshot previews, but database writes
+  still happen through server-side owner checks and repository orchestration.
+- Rollback becomes a reusable owner-checked boundary for later API/E2E tests and
+  deployment hardening.
+
+### Risks
+
+- The current UI uses an inline panel rather than a dedicated dialog; later UX
+  work may split it into a feature component if the workspace shell grows.
+- Conversation context reconciliation after rollback is still minimal. The
+  rollback record preserves the restored snapshot, but full chat-history
+  alignment remains later iterative-modification work.
+- API/E2E tests still need to cover unauthenticated, cross-user, failed
+  rollback, and visual preview paths before production release.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR completes the MVP project-level version
+history and rollback UI stage while explicitly excluding page-level rollback,
+version branches, cross-version merges, and visual diff.

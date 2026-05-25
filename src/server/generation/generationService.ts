@@ -16,6 +16,7 @@ import {
 import { createProjectVersionSnapshot } from "@/server/versions/versionService";
 import {
   sanitizeGeneratedProject,
+  validateGenerationPrompt,
   type GeneratedProject
 } from "@/schemas/generation";
 
@@ -31,19 +32,20 @@ export async function generateProjectVersion(input: {
   provider?: AiProvider;
   versionNumber: number;
 }): Promise<GenerationServiceResult> {
+  const prompt = validateGenerationPrompt(input.prompt);
   const provider = input.provider ?? createMockAiProvider();
   const request = await createGenerationRequestRecord({
     mode: "generate",
     ownerId: input.ownerId,
     projectId: input.projectId,
-    prompt: input.prompt
+    prompt
   });
 
   try {
     const generatedProject = sanitizeGeneratedProject(
       await provider.generateProject({
         mode: "generate",
-        prompt: input.prompt,
+        prompt,
         projectId: input.projectId
       })
     );
@@ -61,7 +63,7 @@ export async function generateProjectVersion(input: {
     await recordGenerationConversation({
       assistantSummary: generatedProject.summary,
       projectId: input.projectId,
-      userPrompt: input.prompt,
+      userPrompt: prompt,
       versionId: persistedVersion.id
     });
     await recordQuotaUsage(input.ownerId, {
@@ -89,19 +91,20 @@ export async function iterateProjectVersion(input: {
   selectedContext?: string;
   versionNumber: number;
 }): Promise<GenerationServiceResult> {
+  const prompt = validateGenerationPrompt(input.prompt);
   const provider = input.provider ?? createMockAiProvider();
   const request = await createGenerationRequestRecord({
     mode: "iterate",
     ownerId: input.ownerId,
     projectId: input.projectId,
-    prompt: input.prompt
+    prompt
   });
 
   try {
     const generatedProject = sanitizeGeneratedProject(
       await provider.iterateProject({
         mode: "iterate",
-        prompt: input.prompt,
+        prompt,
         projectId: input.projectId,
         selectedContext: input.selectedContext
       })
@@ -120,7 +123,7 @@ export async function iterateProjectVersion(input: {
     await recordGenerationConversation({
       assistantSummary: generatedProject.summary,
       projectId: input.projectId,
-      userPrompt: input.prompt,
+      userPrompt: prompt,
       versionId: persistedVersion.id
     });
     await recordQuotaUsage(input.ownerId, {

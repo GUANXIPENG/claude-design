@@ -10,6 +10,7 @@ import {
 import { persistSuccessfulProjectGeneration } from "@/server/generation/projectGenerationRepository";
 import {
   sanitizeGeneratedProject,
+  validateGenerationPrompt,
   type GeneratedProject
 } from "@/schemas/generation";
 
@@ -50,11 +51,7 @@ export async function createProjectFromPrompt(input: {
   prompt: string;
   provider?: AiProvider;
 }): Promise<ProjectGenerationResult> {
-  const prompt = input.prompt.trim();
-
-  if (!prompt) {
-    throw new Error("Generated project prompt is required.");
-  }
+  const prompt = validateGenerationPrompt(input.prompt);
 
   const provider = input.provider ?? createOpenAiResponsesProvider();
   const persistence = input.persistence ?? defaultProjectGenerationPersistence;

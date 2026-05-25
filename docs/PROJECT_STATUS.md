@@ -1,10 +1,10 @@
 # 项目状态文档
 
-最后更新：2026-05-24
+最后更新：2026-05-25
 
 ## 1. 当前项目阶段
 
-当前项目处于：**Issue #18 pre-Sandpack 安全边界加固已完成代码落地：Issue #15 P0 项目生成入口、Supabase migration/RLS、版本/生成/导出记录持久化服务边界、server-only OpenAI Responses provider、项目列表生成入口和 workspace 持久化 snapshot 读取已补齐；Issue #18 进一步补齐 user_profiles 首次 upsert、更严格的生成文件路径校验、persisted snapshot 运行时校验和 auth callback returnTo 站内路径限制。下一步进入 Sandpack 受控预览、版本 UI、导出 zip 和 API/E2E 加固**。
+当前项目处于：**Issue #19 Sandpack readiness 安全门槛已完成代码落地：业务表 Data API 写入收紧为 service-only business writes 优先，生成 prompt 服务端强制 4000 字符上限，生成文件限制为最多 30 files / 单文件 200KB / 总计 1MB，`sanitizeGeneratedProject` 与 `validateVersionSnapshot` 现在返回规范化后的安全路径。下一步才能进入 Sandpack 受控预览、版本 UI、导出 zip 和 API/E2E 加固**。
 
 理由：
 
@@ -13,32 +13,33 @@
 - 已建立 `src/app`、`src/components`、`src/features`、`src/lib`、`src/server`、`src/schemas`、`src/prompts`、`src/types` 目录边界。
 - 已完成 `npm install`、`npm run test`、`npm run typecheck`、`npm run lint`、`npm run build` 和 production server HTTP 验收。
 - 当前已实现受保护项目列表、P0 新建项目生成表单、workspace 持久化 snapshot 读取，并保留未选项目时的空态工作台入口。
-- 当前已新增 Phase 4/Issue #15 的生成输出 schema、路径安全校验、mock provider、server-only OpenAI Responses provider、生成/迭代编排、版本快照/回退数据边界、导出 manifest 边界和 P0 项目生成入口；Issue #18 已把该边界收紧为 Sandpack 前置安全门槛。
+- 当前已新增 Phase 4/Issue #15 的生成输出 schema、路径安全校验、mock provider、server-only OpenAI Responses provider、生成/迭代编排、版本快照/回退数据边界、导出 manifest 边界和 P0 项目生成入口；Issue #18 和 Issue #19 已把该边界收紧为 Sandpack 前置安全门槛。
 - 当前已新增 first-time auth user profile upsert、auth returnTo 站内路径校验、`validateVersionSnapshot` 持久化快照运行时校验和 pre-Sandpack safety 行为测试。
-- 当前已新增 Supabase 初始 schema migration SQL 和项目归属 RLS policy SQL。
+- 当前已新增 Supabase 初始 schema migration SQL、项目归属 RLS policy SQL，以及 Issue #19 service-only business writes 收紧策略。
+- 当前已新增服务端 prompt schema、生成文件数量/大小限制、规范化路径返回和重复规范化路径拒绝测试。
 - 当前仍未实现 Sandpack runtime、导出 zip 下载、版本历史/回退 UI、完整迭代修改闭环、API/E2E 加固和生产部署配置。真实 OpenAI provider 代码已接入，但本地真实调用仍需要有效 `OPENAI_API_KEY`。
 - 当前已新增版本快照、generation request/result、conversation message 和 export record 的 Drizzle 持久化服务边界；在未配置数据库时保持 no-op，便于本地脚本验证。
 
-因此，当前重点应从 pre-Sandpack 安全边界转向 Sandpack 受控预览、版本历史/回退 UI、最终导出打包、API/E2E 加固，以及独立的 Supabase RLS 性能优化 Issue #14。Sandpack 只能消费通过 `validateVersionSnapshot` 和生成文件路径 allowlist 的 current version files。
+因此，当前重点应从 Sandpack readiness 安全门槛转向 Sandpack 受控预览、版本历史/回退 UI、最终导出打包、API/E2E 加固，以及独立的 Supabase RLS 性能优化 Issue #14。Sandpack 只能消费通过 `validateVersionSnapshot`、生成文件路径 allowlist、prompt/file limit 和 service-only write 边界的 current version files。
 
 ## 2. 当前已经完成的内容
 
 | 模块 | 当前状态 | 相关文件 | 备注 |
 |---|---|---|---|
-| 项目初始化 | Git 仓库已存在，当前工作分支为 `fix/issue-18-pre-sandpack-safety`，远程 `origin` 已配置 | `.git/` | Issue #6 已补 Supabase migration/RLS；Issue #13 已完成真实远程验证；Issue #15 已完成 P0 生成入口；Issue #18 已完成 pre-Sandpack 安全边界加固 |
+| 项目初始化 | Git 仓库已存在，当前工作分支为 `fix/issue-19-sandpack-readiness`，远程 `origin` 已配置 | `.git/` | Issue #6 已补 Supabase migration/RLS；Issue #13 已完成真实远程验证；Issue #15 已完成 P0 生成入口；Issue #18 和 Issue #19 已完成 pre-Sandpack / Sandpack readiness 安全边界加固 |
 | 需求文档 | 已完成第一版产品需求梳理 | `docs/requirements.md` | 覆盖产品定位、MVP/P1/P2、功能需求、非功能需求、导出、多页面、对话修改、局部修改、版本、账号、额度、风险 |
 | PRD | 已完成结构化 PRD | `docs/PRD.md` | 覆盖用户角色、用户流程、页面清单、功能列表、Given/When/Then 验收标准、状态设计、视觉风格、信息架构、MVP 边界 |
 | 架构草案 | 已完成技术栈锁定与架构基线 | `docs/architecture.md` | 锁定 Next.js、TypeScript、Tailwind、Supabase、Drizzle、OpenAI Responses API、Zod、Sandpack、Vercel、Vitest、Playwright 等方向 |
 | 前端页面框架 | 首页、登录页、项目列表、P0 生成表单和受保护工作台已实现 | `src/app/page.tsx`、`src/app/login/page.tsx`、`src/app/projects/page.tsx`、`src/app/workspace/page.tsx`、`src/app/layout.tsx`、`src/app/globals.css` | 项目列表读取服务端持久化边界；workspace 带 `projectId` 时读取当前 version snapshot；Sandpack、导出和回退 UI 尚未实现 |
 | 对话输入区 | Phase 2 mock 输入区已实现 | `src/features/workspace/components/WorkspacePage.tsx` | 支持草稿、空输入提示、生成中和成功占位状态；不触发真实 AI |
 | 生成结果展示区 | workspace 读取持久化当前 version snapshot 并展示页面、元数据和代码视图 | `src/features/workspace/components/WorkspacePage.tsx` | 暂未接 Sandpack runtime，不把 fixture 伪装成真实生成结果 |
-| live preview / code view | 代码视图和静态预览已实现；真实 Sandpack 未接入 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | Sandpack 仍只在架构文档中作为后续技术基线 |
+| live preview / code view | 代码视图和静态预览已实现；真实 Sandpack 未接入 | `src/features/workspace/components/WorkspacePage.tsx`、`src/lib/fixtures/workspace.ts` | Sandpack 仍只在架构文档中作为后续技术基线；Issue #19 已补齐进入 Sandpack 前的 service-only writes、prompt/file limit 和规范化 snapshot 门槛 |
 | 项目历史 / 本地存储 | 已建立数据结构和服务端持久化边界 | `src/server/db/schema.ts`、`src/server/versions/versionRepository.ts` | 已有 `project_versions` 最小 schema 和版本写入服务；版本历史 UI 和真实回退闭环仍未实现 |
 | API route / Server Actions | Auth callback、登录/退出和 P0 项目生成 server action 已实现；auth callback 和 magic link returnTo 已限制为站内路径 | `src/app/auth/callback/route.ts`、`src/server/auth/actions.ts`、`src/server/auth/returnTo.ts`、`src/server/generation/actions.ts` | 导出下载 API、版本回退 action 和完整迭代修改 action 尚未实现 |
 | OpenAI 调用 | 已建立 mock provider 与 server-only OpenAI Responses provider | `src/server/ai/provider.ts`、`src/server/ai/openaiProvider.ts`、`src/prompts/generation.ts`、`docs/architecture.md` | OpenAI key 保持 server-only；本地真实调用需要有效 `OPENAI_API_KEY`；自动化测试使用 mock provider/client |
 | 导出功能 | Phase 4 已建立服务端导出 manifest 和导出记录持久化边界；真实 zip/静态包下载尚未实现 | `src/server/export/exportService.ts`、`src/server/export/exportRepository.ts` | 导出前会复用路径 allowlist，并记录 export 使用次数和 export record；当前不生成下载文件 |
-| 测试文件 | Phase 1/2/3/4/Issue #15 脚本级检查、Phase 5 行为测试和 Issue #18 pre-Sandpack safety 行为测试已实现 | `tests/phase1-scaffold.test.mjs`、`tests/phase2-workspace.test.mjs`、`tests/phase3-persistence-auth.test.mjs`、`tests/phase4-generation-preview-export.test.mjs`、`tests/phase4-persistence-records.test.mjs`、`tests/phase5-p0-generation-entry.test.mjs`、`tests/phase5-p0-generation-entry.behavior.test.ts`、`tests/pre-sandpack-safety.behavior.test.ts` | 覆盖 scaffold、workspace、auth/db 基础层、Phase 4 服务边界、P0 生成入口空输入/非法路径/成功持久化/错误脱敏、pre-Sandpack 文件路径/snapshot/auth profile/returnTo 安全行为；API 和 Playwright E2E 仍未建立 |
-| README / 文档 | 架构和项目状态文档已同步 Issue #18 pre-Sandpack 安全边界 | `README.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | requirements 和 PRD 范围未变化；README 后续随 Sandpack、版本 UI 和导出继续更新 |
+| 测试文件 | Phase 1/2/3/4/Issue #15 脚本级检查、Phase 5 行为测试和 Issue #18/#19 pre-Sandpack safety 行为测试已实现 | `tests/phase1-scaffold.test.mjs`、`tests/phase2-workspace.test.mjs`、`tests/phase3-persistence-auth.test.mjs`、`tests/phase4-generation-preview-export.test.mjs`、`tests/phase4-persistence-records.test.mjs`、`tests/phase5-p0-generation-entry.test.mjs`、`tests/phase5-p0-generation-entry.behavior.test.ts`、`tests/pre-sandpack-safety.behavior.test.ts`、`tests/phase4-supabase-migration-rls.test.mjs` | 覆盖 scaffold、workspace、auth/db 基础层、Phase 4 服务边界、RLS SQL 存在性、P0 生成入口空输入/非法路径/成功持久化/错误脱敏、pre-Sandpack 文件路径/snapshot/auth profile/returnTo、service-only business writes、prompt/file limit 安全行为；API 和 Playwright E2E 仍未建立 |
+| README / 文档 | 架构和项目状态文档已同步 Issue #19 Sandpack readiness 安全门槛 | `README.md`、`docs/architecture.md`、`docs/PROJECT_STATUS.md` | requirements 和 PRD 范围未变化；README 后续随 Sandpack、版本 UI 和导出继续更新 |
 | 环境变量配置 | 示例已补充 Supabase Auth、Supabase database、OpenAI 占位 | `.env.example` | 不包含真实密钥；真实 `.env` 仍应本地私有 |
 | Git / GitHub / Issue 管理 | 远程已配置；Issue #2 已关闭；本地已有 Phase 2 单文件 commits | `.git/` | `origin` 指向 `https://github.com/GUANXIPENG/claude-design.git`；当前分支尚未 push |
 
@@ -83,7 +84,7 @@
 | 导出功能 | Phase 4 已建立导出 manifest 服务边界和导出记录持久化；静态文件 zip、可编辑项目结构下载仍未实现 | 用户还无法真正下载生成结果 | 是 | Phase 4 后续 |
 | 额度限制 | 已建立 quota schema 和 `recordQuotaUsage` 基础记录服务；额度提示、限制和扣减策略未实现 | 成本控制和未来商业化需要基础记录 | 否，基础记录边界已建立；真实限制逻辑仍需后续补齐 | Phase 3 已完成基础记录，Phase 4/5 补限制与 UI |
 | 部署配置 | Vercel 配置、环境变量、构建脚本缺失 | 无法部署预览或生产环境 | 是，部署前阻塞 | Phase 5 |
-| 测试覆盖 | Phase 1/2/3/4 脚本检查、Issue #15 生成入口行为测试和 Issue #18 pre-Sandpack safety Vitest 测试已建立；API 测试、Playwright 未建立 | 目前能验证 scaffold、前端壳、Auth/DB 基础层、Phase 4 服务边界、RLS SQL 存在性、真实远程 RLS 隔离、P0 生成入口和 pre-Sandpack 文件/snapshot/auth 安全边界；仍缺 API 和 E2E | 是，至少最小业务/安全测试仍阻塞可发布 MVP | Phase 5 |
+| 测试覆盖 | Phase 1/2/3/4 脚本检查、Issue #15 生成入口行为测试和 Issue #18/#19 pre-Sandpack safety Vitest 测试已建立；API 测试、Playwright 未建立 | 目前能验证 scaffold、前端壳、Auth/DB 基础层、Phase 4 服务边界、RLS SQL 存在性、P0 生成入口、pre-Sandpack 文件/snapshot/auth 安全边界、service-only business writes、prompt/file limit；仍缺 API 和 E2E | 是，至少最小业务/安全测试仍阻塞可发布 MVP | Phase 5 |
 
 ## 4. 已知问题和阻塞点
 
@@ -741,6 +742,46 @@ Completed in this stage:
   `npm.cmd run test`.
 - Updated homepage and login copy so the UI no longer describes the product as
   a Phase 2 fixture-only shell.
+
+Not completed in this stage:
+
+- Sandpack runtime preview is not implemented.
+- Version history UI and rollback UI are not implemented.
+- Zip/static export download is not implemented.
+- Full API/E2E test hardening is not implemented.
+- Issue #14 RLS performance advisor optimization remains separate.
+
+Next MVP order:
+
+1. Connect Sandpack controlled preview to the validated current version files.
+2. Add version history and rollback UI.
+3. Add zip/static export download.
+4. Add API/E2E tests and deployment configuration hardening.
+5. Keep Issue #14 as an independent RLS performance optimization task.
+
+## 20. 2026-05-25 Issue #19 Sandpack readiness blockers
+
+Current stage: Sandpack readiness blockers are closed in code. Sandpack itself
+is still not implemented; the next stage can connect a controlled preview only
+to files that already passed the stricter server-side snapshot boundary.
+
+Completed in this stage:
+
+- Created Issue #19: `fix: close sandpack readiness blockers`.
+- Added `supabase/policies/0002_service_only_writes.sql` to drop authenticated
+  write policies and revoke direct INSERT/UPDATE/DELETE grants for business
+  tables. Business writes should go through server-side orchestration.
+- Added server-side generation prompt validation: non-empty, trimmed, and at
+  most 4000 characters. Client `maxLength` remains only a UI helper.
+- Added generated file limits: maximum 30 files, maximum 200KB per file, and
+  maximum 1MB total file content.
+- Updated `sanitizeGeneratedProject` and `validateVersionSnapshot` so returned
+  files and page references use canonical safe paths. Duplicate paths after
+  canonicalization are rejected.
+- Extended pre-Sandpack tests for path canonicalization, duplicate normalized
+  paths, prompt rejection, file count/size limits, and service-only business
+  write policy markers.
+- Updated `docs/architecture.md` with ADR-0008.
 
 Not completed in this stage:
 

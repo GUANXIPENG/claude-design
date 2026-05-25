@@ -14,9 +14,11 @@ function assertFile(filePath) {
 
 const migrationPath = "drizzle/0001_initial_schema.sql";
 const rlsPath = "supabase/policies/0001_project_rls.sql";
+const serviceOnlyWritesPath = "supabase/policies/0002_service_only_writes.sql";
 
 assertFile(migrationPath);
 assertFile(rlsPath);
+assertFile(serviceOnlyWritesPath);
 
 const packageJson = JSON.parse(readText("package.json"));
 assert.match(packageJson.scripts.test, /phase4-supabase-migration-rls\.test\.mjs/);
@@ -79,13 +81,40 @@ const rls = readText(rlsPath);
   "quotas_user_select"
 ].forEach((policyName) => assert.match(rls, new RegExp(policyName)));
 
+const serviceOnlyWrites = readText(serviceOnlyWritesPath);
+[
+  "DROP POLICY IF EXISTS user_profiles_self_insert",
+  "DROP POLICY IF EXISTS user_profiles_self_update",
+  "DROP POLICY IF EXISTS projects_owner_insert",
+  "DROP POLICY IF EXISTS projects_owner_update",
+  "DROP POLICY IF EXISTS projects_owner_delete",
+  "DROP POLICY IF EXISTS pages_project_owner_insert",
+  "DROP POLICY IF EXISTS pages_project_owner_update",
+  "DROP POLICY IF EXISTS pages_project_owner_delete",
+  "DROP POLICY IF EXISTS project_versions_project_owner_insert",
+  "DROP POLICY IF EXISTS conversation_messages_project_owner_insert",
+  "DROP POLICY IF EXISTS generation_requests_requester_insert",
+  "DROP POLICY IF EXISTS generation_requests_requester_update",
+  "DROP POLICY IF EXISTS generation_results_requester_insert",
+  "DROP POLICY IF EXISTS export_records_project_owner_insert",
+  "DROP POLICY IF EXISTS quotas_user_insert",
+  "REVOKE INSERT, UPDATE, DELETE ON TABLE",
+  "FROM anon, authenticated"
+].forEach((marker) => assert.match(serviceOnlyWrites, new RegExp(marker)));
+
 const projectStatus = readText("docs/PROJECT_STATUS.md");
 assert.match(projectStatus, /Issue #6/);
 assert.match(projectStatus, /Supabase migration/);
 assert.match(projectStatus, /RLS/);
+assert.match(projectStatus, /Issue #19/);
+assert.match(projectStatus, /Sandpack readiness/);
+assert.match(projectStatus, /service-only business writes/);
 
 const architecture = readText("docs/architecture.md");
 assert.match(architecture, /ADR-0004/);
 assert.match(architecture, /RLS/);
+assert.match(architecture, /ADR-0008/);
+assert.match(architecture, /service-only business writes/);
+assert.match(architecture, /30 files/);
 
 console.log("Phase 4 Supabase migration and RLS checks passed.");

@@ -6,7 +6,7 @@
 
 本文档是当前 MVP 阶段的技术决策基线，用于指导“类似 Claude Design 的 AI 设计生成网站”的持续实现。它不是永久架构，也不是最终工程实现说明。后续每次重要架构变化都必须在本文档的 ADR 记录中说明：为什么要改、改了什么、影响哪些模块、是否引入新风险、是否影响 MVP 范围。
 
-当前仓库已经包含 Phase 1 scaffold、Phase 2 前端工作台壳、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、Issue #15 server-only OpenAI Responses provider 与 P0 项目生成入口、Issue #18 pre-Sandpack user profile upsert、严格生成文件路径校验、persisted snapshot 运行时校验和 auth callback returnTo 站内路径限制、Issue #19 Sandpack readiness service-only business writes、prompt/file limit 和规范化 snapshot 返回，以及已在真实 Supabase 项目验证通过的初始 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
+当前仓库已经包含 Phase 1 scaffold、Phase 2 前端工作台壳、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、Issue #15 server-only OpenAI Responses provider 与 P0 项目生成入口、Issue #18 pre-Sandpack user profile upsert、严格生成文件路径校验、persisted snapshot 运行时校验和 auth callback returnTo 站内路径限制、Issue #19 Sandpack readiness service-only business writes、prompt/file limit 和规范化 snapshot 返回、Issue #20 Sandpack controlled preview，以及已在真实 Supabase 项目验证通过的初始 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
 
 ### 1.1 已读取的仓库内容
 
@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口和 Sandpack 前置安全门槛已落地。仍未完成 Sandpack runtime、导出 zip 下载、版本历史/回退 UI、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口、Sandpack 前置安全门槛和 Sandpack controlled preview 已落地。仍未完成导出 zip 下载、版本历史/回退 UI、Playwright E2E 和生产部署配置。
 
 ### 1.2 架构目标
 
@@ -837,7 +837,7 @@ MVP 基线采用：
 | 问题 | 说明 | 推荐处理 |
 |---|---|---|
 | PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而架构文档需要锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
-| Phase 4/Issue #15 基础层不等于完整 MVP 闭环 | 当前已有 schema、mock provider、server-only OpenAI provider、P0 生成入口、版本/生成/对话/导出持久化边界和导出 manifest 服务边界，但 Sandpack runtime、版本历史 UI、完整迭代修改和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“生成入口已实现”和“完整 MVP 闭环未实现” |
+| Phase 4/Issue #15 基础层不等于完整 MVP 闭环 | 当前已有 schema、mock provider、server-only OpenAI provider、P0 生成入口、版本/生成/对话/导出持久化边界、导出 manifest 服务边界和 Sandpack controlled preview，但版本历史 UI、完整迭代修改和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“生成入口/预览已实现”和“完整 MVP 闭环未实现” |
 | Supabase RLS 已验证但仍有性能优化项 | 真实 Supabase migration/RLS 已执行并验证跨用户隔离；performance advisor 提示 `auth_rls_initplan` | Issue #14 优化 policy 中适用的 `auth.uid()` 调用为 `(select auth.uid())` 并复跑 advisor |
 
 ### 6.2 待确认问题
@@ -968,7 +968,7 @@ Phase 4 基础层采用：
 - `src/server/generation/generationService.ts` 编排 generate / iterate，调用 provider、校验输出、记录额度并创建版本快照。
 - `src/server/versions/versionService.ts` 提供项目级版本快照和 rollback 记录边界；rollback 创建新的当前版本记录，不改写历史版本。
 - `src/server/export/exportService.ts` 基于版本快照准备安全导出 manifest，并记录 export 使用次数。
-- 工作台 UI 展示 Phase 4 的选区上下文、版本回退和导出状态，但仍明确预览内容来自 fixture，真实 Sandpack 运行时待接入。
+- 工作台 UI 当时展示 Phase 4 的选区上下文、版本回退和导出状态，并明确预览内容来自 fixture；该预览已由 ADR-0009 的 Sandpack controlled preview 取代。
 
 #### 备选方案
 
@@ -996,7 +996,7 @@ Phase 4 基础层采用：
 - 当前 provider 是 mock provider，不能代表真实模型质量或 OpenAI Responses API 行为。
 - 当前导出服务只准备 manifest，还没有生成 zip 或下载文件。
 - 当前版本服务只建立快照/rollback 数据边界，还没有写入数据库。
-- 当前工作台仍使用 fixture 预览，真实 Sandpack 运行时和错误 overlay 待后续 Issue 接入。
+- 当时工作台仍使用 fixture 预览；当前已由 ADR-0009 接入 Sandpack controlled preview，运行错误修复仍待后续 Issue。
 
 #### 是否影响 MVP 范围
 
@@ -1005,7 +1005,7 @@ Phase 4 基础层采用：
 #### 后续动作
 
 - 用真实 OpenAI Responses API provider 替换 mock provider，并保留同一 `AiProvider` 接口。
-- 接入 Sandpack，把通过 schema 校验的文件树载入受控预览。
+- Sandpack controlled preview 已由 ADR-0009 接入；下一步补版本历史 UI、导出 zip 和 API/E2E 加固。
 - 版本快照、生成记录、对话记录和导出记录写入 Supabase 的 repository 边界已由 ADR-0005 落地；真实数据库 schema/RLS 验证已由 Issue #13 完成。
 - 实现导出 zip / 静态包下载。
 
@@ -1080,7 +1080,7 @@ Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、�
 
 该顺序不改变 MVP 范围；它只是把 ADR-0003 后续动作拆成可验证的工程步骤。
 
-注：第 3、4 项已由 ADR-0006 / Issue #15 完成。当前剩余 MVP 路线从 Sandpack 受控预览开始，随后是版本 UI、导出 zip 和 API/E2E 加固。
+注：第 3、4 项已由 ADR-0006 / Issue #15 完成，第 5 项已由 ADR-0009 / Issue #20 完成。当前剩余 MVP 路线从版本 UI 开始，随后是导出 zip 和 API/E2E 加固。
 
 ### ADR-0005: 落地版本、生成、对话和导出记录持久化服务边界
 
@@ -1167,8 +1167,8 @@ and quota usage.
 
 - The first P0 generation entry is now connected to the existing auth, project,
   version, conversation, generation-result, and quota boundaries.
-- Sandpack runtime, zip export, version history UI, rollback UI, and full
-  iterative modification remain separate MVP stages.
+- Zip export, version history UI, rollback UI, and full iterative modification
+  remain separate MVP stages.
 - Provider failures are surfaced to the project list as a generic user-facing
   error. Raw provider errors and keys are not exposed to browser code.
 
@@ -1211,8 +1211,8 @@ as untrusted runtime data instead of relying on TypeScript casts.
   environment files, and other sensitive paths.
 - Add `validateVersionSnapshot` and use it in the project repository before a
   persisted current version snapshot reaches the workspace UI.
-- Keep Sandpack runtime, export zip packaging, version history UI, and rollback
-  UI as later MVP stages.
+- Keep export zip packaging, version history UI, and rollback UI as later MVP
+  stages.
 
 ### Consequences
 
@@ -1290,3 +1290,59 @@ were missing.
 
 No P1/P2 scope is added. This ADR only closes the safety gate required before
 the MVP Sandpack controlled preview stage.
+
+## ADR-0009: Sandpack Controlled Preview
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #20 implements the MVP Sandpack controlled preview after Issue #19 closed
+the pre-Sandpack safety gate. The workspace already reads a persisted current
+version snapshot through the server repository boundary, so the browser preview
+can consume that validated `VersionSnapshot` without contacting OpenAI,
+database service-role clients, or project write APIs.
+
+### Decision
+
+- Install `@codesandbox/sandpack-react@2.20.0`.
+- Add `src/features/preview` with a client-only
+  `ControlledSandpackPreview` component.
+- Map the selected validated page file into a fixed React Sandpack file tree:
+  `/src/App.tsx`, `/src/main.tsx`, `/src/styles.css`, and safe component/style
+  files derived from the snapshot.
+- Use Sandpack `template="react-ts"` and do not pass AI-supplied package
+  manifests, custom dependencies, package scripts, or expanded external
+  resources.
+- Keep code view and prototype boundary messaging visible in the workspace.
+- Preserve version history, rollback UI, export zip, runtime repair loops, and
+  click-to-select DOM mapping as later MVP stages.
+
+### Consequences
+
+- The workspace now has a real Sandpack controlled preview surface instead of a
+  metadata-only preview.
+- Preview remains a browser runtime for already validated front-end prototype
+  files; it is not a security boundary for secrets, database writes, auth, quota,
+  export, or AI calls.
+- Snapshot-to-Sandpack mapping is isolated in a pure helper so empty, error, and
+  file-tree behavior can be tested without browser automation.
+
+### Risks
+
+- Generated files may still fail at runtime if model output imports unsupported
+  aliases or relies on dependencies outside the fixed React template. Later
+  repair and prompt work should address this without allowing arbitrary
+  dependency installation.
+- Sandpack package installation added transitive npm audit advisories; these
+  should be tracked separately from the MVP preview wiring unless they block
+  deployment.
+- Playwright visual smoke coverage is still deferred to the API/E2E hardening
+  stage.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR implements the existing MVP controlled preview
+stage and keeps version UI, export, and deployment hardening separate.

@@ -63,7 +63,7 @@ describe("P0 project generation entry behavior", () => {
         prompt: "   ",
         provider
       })
-    ).rejects.toThrow("Generated project prompt is required");
+    ).rejects.toThrow("Generation prompt is required");
 
     expect(provider.generateProject).not.toHaveBeenCalled();
     expect(persistence.createGenerationRequest).not.toHaveBeenCalled();

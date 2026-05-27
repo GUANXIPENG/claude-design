@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "start": "next start",
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs && node tests/phase3-persistence-auth.test.mjs && node tests/phase4-generation-preview-export.test.mjs && node tests/phase4-supabase-migration-rls.test.mjs && node tests/phase4-persistence-records.test.mjs && node tests/phase5-p0-generation-entry.test.mjs && node tests/phase6-sandpack-preview.test.mjs && node tests/phase7-version-history-rollback.test.mjs && node tests/phase8-zip-static-export.test.mjs && vitest run tests/phase5-p0-generation-entry.behavior.test.ts tests/pre-sandpack-safety.behavior.test.ts tests/sandpack-preview.behavior.test.ts tests/version-history-rollback.behavior.test.ts tests/export-zip.behavior.test.ts"
+    "test": "node tests/phase1-scaffold.test.mjs && node tests/phase2-workspace.test.mjs && node tests/phase3-persistence-auth.test.mjs && node tests/phase4-generation-preview-export.test.mjs && node tests/phase4-supabase-migration-rls.test.mjs && node tests/phase4-persistence-records.test.mjs && node tests/phase5-p0-generation-entry.test.mjs && node tests/phase6-sandpack-preview.test.mjs && node tests/phase7-version-history-rollback.test.mjs && node tests/phase8-zip-static-export.test.mjs && node tests/phase9-api-e2e-deploy.test.mjs && vitest run tests/phase5-p0-generation-entry.behavior.test.ts tests/pre-sandpack-safety.behavior.test.ts tests/sandpack-preview.behavior.test.ts tests/version-history-rollback.behavior.test.ts tests/export-zip.behavior.test.ts",
+    "test:e2e": "npm run build && playwright test"
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "2.20.0",
@@ -22,6 +24,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/node": "^22.15.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

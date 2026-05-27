@@ -38,6 +38,7 @@ type VersionHistoryItem = {
 
 type WorkspacePageProps = {
   authUserEmail: string | null;
+  exportMessage: string | null;
   versionHistory: VersionHistoryItem[];
   versionMessage: string | null;
   workspaceProject: ProjectWorkspaceSnapshot | null;
@@ -45,6 +46,7 @@ type WorkspacePageProps = {
 
 export function WorkspacePage({
   authUserEmail,
+  exportMessage,
   versionHistory,
   versionMessage,
   workspaceProject
@@ -117,9 +119,30 @@ export function WorkspacePage({
           >
             Version history
           </button>
-          <button className="rounded-md bg-accent px-3 py-2 text-white" disabled type="button">
-            Export current version
-          </button>
+          {currentVersion ? (
+            <>
+              <Link
+                className="rounded-md bg-accent px-3 py-2 text-white"
+                href={`/export?projectId=${workspaceProject.project.id}&versionId=${currentVersion.id}&exportType=static`}
+              >
+                Download static ZIP
+              </Link>
+              <Link
+                className="rounded-md border border-line px-3 py-2"
+                href={`/export?projectId=${workspaceProject.project.id}&versionId=${currentVersion.id}&exportType=editable-project`}
+              >
+                Download editable ZIP
+              </Link>
+            </>
+          ) : (
+            <button
+              className="rounded-md bg-accent px-3 py-2 text-white opacity-60"
+              disabled
+              type="button"
+            >
+              Export current version
+            </button>
+          )}
         </div>
       </header>
 
@@ -204,10 +227,16 @@ export function WorkspacePage({
               {versionMessage}
             </div>
           ) : null}
+          {exportMessage ? (
+            <div className="mb-4 rounded-md border border-line bg-canvas p-3 text-xs leading-5 text-muted">
+              {exportMessage}
+            </div>
+          ) : null}
           <div className="mb-4 rounded-md border border-line bg-canvas p-3 text-xs leading-5 text-muted">
             The current workspace displays persisted prototype metadata and safe
-            generated files in a controlled Sandpack preview. Zip export and full
-            iterative editing are separate MVP stages.
+            generated files in a controlled Sandpack preview. Exports are
+            server-generated ZIP files with prototype boundary notes; full iterative
+            editing remains a separate MVP stage.
           </div>
 
           {isVersionHistoryOpen ? (

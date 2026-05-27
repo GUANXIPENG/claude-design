@@ -1,6 +1,6 @@
 # AI Design Workspace 技术栈锁定与架构草案
 
-最后更新：2026-05-25
+最后更新：2026-05-27
 
 ## 1. 文档定位与当前仓库状态
 
@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口、Sandpack 前置安全门槛、Sandpack controlled preview、版本历史和项目级回退 UI、服务器端 zip/static export 下载入口已落地。仍未完成完整 PRD 导出弹窗/前置检查/进度/成功状态、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口、Sandpack 前置安全门槛、Sandpack controlled preview、版本历史和项目级回退 UI、服务器端 zip/static export 下载入口已落地。Issue #23 已开始补 API/E2E/部署加固：新增 Playwright 配置和 protected routes HTTP smoke，优先验证 public routes、未登录 `/projects`、`/workspace` 和 `/export` 登录跳转。仍未完成完整 PRD 导出弹窗/前置检查/进度/成功状态和真实部署复验。
 
 ### 1.2 架构目标
 
@@ -1470,3 +1470,57 @@ parsing, and real backend business logic generation. The full PRD export
 experience still needs hardening in the next stage: export dialog, explicit
 pre-export checklist, export-in-progress state, export-success UI, retry flow,
 and API/E2E coverage.
+
+## ADR-0012: API E2E And Deployment Hardening
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #23 starts the final MVP hardening stage after server-side ZIP export.
+The app has protected routes, server actions, validated Sandpack input,
+rollback, and export downloads, but release readiness requires route-level
+checks, a repeatable Playwright entry point, and deployment documentation for
+Vercel, Supabase, and OpenAI environment variables.
+
+### Decision
+
+- Add `@playwright/test` as a development dependency.
+- Add `playwright.config.ts` with a production `next start` web server and a
+  `tests/e2e` test directory.
+- Add HTTP-level protected route smoke tests for `/`, `/login`, `/projects`,
+  `/workspace`, and `/export`.
+- Use Playwright's request fixture for the first hardening tests so the suite can
+  validate redirects without requiring browser screenshot assets.
+- Add `npm run start` and `npm run test:e2e` scripts.
+- Keep real OpenAI and Supabase credentials out of automated tests; use existing
+  mock/schema/service tests for deterministic behavior.
+- Document Vercel/Supabase/OpenAI environment variables without committing
+  secrets.
+
+### Consequences
+
+- Unauthenticated access to private project, workspace, and export routes is now
+  covered by an E2E smoke suite.
+- Production server startup is standardized for local verification and web
+  usability checks.
+- Deployment readiness is documented without changing the app's runtime
+  architecture or adding new product scope.
+
+### Risks
+
+- Browser-based visual Playwright coverage is still limited; the first suite
+  focuses on route and redirect correctness.
+- Real Supabase Auth and OpenAI provider calls still require valid local or
+  deployment environment variables before manual production verification.
+- Windows uses `npx.cmd` in the Playwright webServer command for the current
+  Codex/local environment; deployment itself should continue using Vercel's
+  normal Next.js build flow.
+
+### MVP Scope Impact
+
+No P1/P2 product scope is added. This ADR hardens the existing MVP routes and
+deployment notes while keeping payment, teams, public sharing, Figma import,
+image/file parsing, and real backend business logic generation out of scope.

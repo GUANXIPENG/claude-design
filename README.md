@@ -1,8 +1,9 @@
 # AI Design Workspace
 
-Issue #22 connects server-generated zip/static export downloads on top of the
+Issue #23 hardens the API/E2E and deployment readiness layer on top of the
 existing authenticated P0 project generation, auth, persistence, schema,
-controlled Sandpack preview, and version rollback foundations.
+controlled Sandpack preview, version rollback, and server ZIP export
+foundations.
 
 ## Current Stage
 
@@ -36,11 +37,13 @@ This is not the full MVP. The app now establishes:
   boundary README content.
 - The current export entry is a direct server download link. The full PRD export
   dialog, pre-export checklist, in-progress state, success state, and retry flow
-  remain part of the next API/E2E hardening stage.
-- Phase 1 through Phase 8 verification scripts.
+  remain future UI work after the first API/E2E hardening pass.
+- Phase 1 through Phase 9 verification scripts.
+- Playwright protected-route smoke coverage for public pages, authenticated
+  redirects, and export-route failure redirects.
 
-API/E2E hardening and real payment or subscription logic are intentionally not
-implemented yet.
+Cross-user API/E2E coverage, full export dialog UX, real deployment verification,
+and real payment or subscription logic are intentionally not implemented yet.
 
 ## Setup
 
@@ -60,6 +63,7 @@ Run the available checks:
 
 ```bash
 npm run test
+npm run test:e2e
 npm run typecheck
 npm run lint
 npm run build
@@ -86,10 +90,29 @@ AI generation variables:
 OpenAI API keys, Supabase service role keys, and database URLs must stay
 server-only. Browser code may only use the public Supabase URL and anon key.
 
+## Deployment
+
+Vercel is the intended MVP deployment target. Configure these variables in the
+Vercel project settings before testing a preview or production deployment:
+
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_DATABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+
+Do not commit real values. Supabase migrations and RLS policies must be applied
+to the target project before release. The OpenAI key is required only on the
+server side for real generation calls; automated tests use deterministic mocks
+where possible.
+
 ## Project Boundaries
 
-Issue #22 keeps export packaging behind server-side owner checks and validated
-snapshot boundaries. Future work should keep business logic out of `src/app`
+Issue #23 keeps export packaging behind server-side owner checks and validated
+snapshot boundaries, while adding portable Playwright smoke coverage and
+deployment notes. Future work should keep business logic out of `src/app`
 route files where possible and use:
 
 - `src/features` for frontend product areas.

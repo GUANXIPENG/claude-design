@@ -1,8 +1,8 @@
 # AI Design Workspace
 
-Issue #21 connects version history and project-level rollback UI on top of the
-existing authenticated P0 project generation, auth, persistence, schema, and
-controlled Sandpack preview foundations.
+Issue #22 connects server-generated zip/static export downloads on top of the
+existing authenticated P0 project generation, auth, persistence, schema,
+controlled Sandpack preview, and version rollback foundations.
 
 ## Current Stage
 
@@ -31,10 +31,16 @@ This is not the full MVP. The app now establishes:
 - Controlled Sandpack preview for validated current-version snapshots.
 - Version history UI with historical preview, second confirmation, and
   project-level rollback that creates a new current version record.
-- Phase 1 through Phase 7 verification scripts.
+- Server-side static and editable-project ZIP export for validated current
+  version snapshots, including export records, quota records, and prototype
+  boundary README content.
+- The current export entry is a direct server download link. The full PRD export
+  dialog, pre-export checklist, in-progress state, success state, and retry flow
+  remain part of the next API/E2E hardening stage.
+- Phase 1 through Phase 8 verification scripts.
 
-Export packaging, API/E2E hardening, and real payment or subscription logic are
-intentionally not implemented yet.
+API/E2E hardening and real payment or subscription logic are intentionally not
+implemented yet.
 
 ## Setup
 
@@ -82,9 +88,9 @@ server-only. Browser code may only use the public Supabase URL and anon key.
 
 ## Project Boundaries
 
-Issue #21 keeps version history and rollback behind server-side owner checks and
-validated snapshot boundaries. Future work should keep business logic out of
-`src/app` route files where possible and use:
+Issue #22 keeps export packaging behind server-side owner checks and validated
+snapshot boundaries. Future work should keep business logic out of `src/app`
+route files where possible and use:
 
 - `src/features` for frontend product areas.
 - `src/lib/fixtures` for mock data that must not become the production data
@@ -95,6 +101,8 @@ validated snapshot boundaries. Future work should keep business logic out of
 - `src/server/quota` for operation-count quota records.
 - `src/server/versions` for version history, snapshot validation, and rollback
   orchestration.
+- `src/server/export` for manifest preparation, ZIP archive creation, export
+  records, and export quota usage.
 - `src/schemas` for runtime validation.
 - `src/prompts` for auditable prompt templates.
 - `src/types` for shared TypeScript types.

@@ -9,8 +9,18 @@ export const dynamic = "force-dynamic";
 
 type WorkspaceRouteProps = {
   searchParams?:
-    | Promise<{ projectId?: string; versionError?: string; versionRestored?: string }>
-    | { projectId?: string; versionError?: string; versionRestored?: string };
+    | Promise<{
+        exportError?: string;
+        projectId?: string;
+        versionError?: string;
+        versionRestored?: string;
+      }>
+    | {
+        exportError?: string;
+        projectId?: string;
+        versionError?: string;
+        versionRestored?: string;
+      };
 };
 
 export default async function WorkspaceRoute({ searchParams }: WorkspaceRouteProps) {
@@ -39,10 +49,14 @@ export default async function WorkspaceRoute({ searchParams }: WorkspaceRoutePro
     : resolvedSearchParams?.versionError
       ? "Version restore failed. The current version was not changed."
       : null;
+  const exportMessage = resolvedSearchParams?.exportError
+    ? "Export failed. The current project and version were not changed."
+    : null;
 
   return (
     <WorkspacePage
       authUserEmail={user.email}
+      exportMessage={exportMessage}
       versionHistory={serializedVersionHistory}
       versionMessage={versionMessage}
       workspaceProject={serializedWorkspaceProject}

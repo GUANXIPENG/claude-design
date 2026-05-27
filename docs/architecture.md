@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口、Sandpack 前置安全门槛、Sandpack controlled preview、版本历史和项目级回退 UI 已落地。仍未完成导出 zip 下载、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口、Sandpack 前置安全门槛、Sandpack controlled preview、版本历史和项目级回退 UI、服务器端 zip/static export 下载入口已落地。仍未完成完整 PRD 导出弹窗/前置检查/进度/成功状态、Playwright E2E 和生产部署配置。
 
 ### 1.2 架构目标
 
@@ -837,7 +837,7 @@ MVP 基线采用：
 | 问题 | 说明 | 推荐处理 |
 |---|---|---|
 | PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而架构文档需要锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
-| Phase 4/Issue #15 基础层不等于完整 MVP 闭环 | 当前已有 schema、mock provider、server-only OpenAI provider、P0 生成入口、版本/生成/对话/导出持久化边界、导出 manifest 服务边界、Sandpack controlled preview 和 Issue #21 版本历史/回退 UI，但完整迭代修改、zip 下载和 API/E2E 加固尚未完成 | 在 PROJECT_STATUS 中持续区分“生成入口/预览/回退已实现”和“完整 MVP 闭环未实现” |
+| Phase 4/Issue #15 基础层不等于完整 MVP 闭环 | 当前已有 schema、mock provider、server-only OpenAI provider、P0 生成入口、版本/生成/对话/导出持久化边界、导出 manifest 服务边界、Sandpack controlled preview、Issue #21 版本历史/回退 UI 和 Issue #22 服务器端 ZIP 下载入口，但完整迭代修改、完整 PRD 导出体验和 API/E2E 加固尚未完成 | 在 PROJECT_STATUS 中持续区分“生成入口/预览/回退/下载入口已实现”和“完整 MVP 闭环未实现” |
 | Supabase RLS 已验证但仍有性能优化项 | 真实 Supabase migration/RLS 已执行并验证跨用户隔离；performance advisor 提示 `auth_rls_initplan` | Issue #14 优化 policy 中适用的 `auth.uid()` 调用为 `(select auth.uid())` 并复跑 advisor |
 
 ### 6.2 待确认问题
@@ -994,7 +994,7 @@ Phase 4 基础层采用：
 #### 风险
 
 - 当前 provider 是 mock provider，不能代表真实模型质量或 OpenAI Responses API 行为。
-- 当前导出服务只准备 manifest，还没有生成 zip 或下载文件。
+- ADR-0003 当时导出服务只准备 manifest，还没有生成 zip 或下载文件；当前已由 ADR-0011 接入服务器端 ZIP 下载。
 - 当前版本服务只建立快照/rollback 数据边界，还没有写入数据库。
 - 当时工作台仍使用 fixture 预览；当前已由 ADR-0009 接入 Sandpack controlled preview，运行错误修复仍待后续 Issue。
 
@@ -1005,9 +1005,9 @@ Phase 4 基础层采用：
 #### 后续动作
 
 - 用真实 OpenAI Responses API provider 替换 mock provider，并保留同一 `AiProvider` 接口。
-- Sandpack controlled preview 已由 ADR-0009 接入；版本历史和项目级回退 UI 已由 ADR-0010 接入；下一步补导出 zip 和 API/E2E 加固。
+- Sandpack controlled preview 已由 ADR-0009 接入；版本历史和项目级回退 UI 已由 ADR-0010 接入；zip/static export 已由 ADR-0011 接入；下一步补 API/E2E 加固。
 - 版本快照、生成记录、对话记录和导出记录写入 Supabase 的 repository 边界已由 ADR-0005 落地；真实数据库 schema/RLS 验证已由 Issue #13 完成。
-- 实现导出 zip / 静态包下载。
+- Issue #22 已实现导出 zip / 静态包下载；下一步补完整导出体验状态和 API/E2E 覆盖。
 
 ### ADR-0004: 补齐 Supabase migration 与 RLS policy 基础层
 
@@ -1080,7 +1080,7 @@ Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、�
 
 该顺序不改变 MVP 范围；它只是把 ADR-0003 后续动作拆成可验证的工程步骤。
 
-注：第 3、4 项已由 ADR-0006 / Issue #15 完成，第 5 项已由 ADR-0009 / Issue #20 完成，第 6 项已由 ADR-0010 / Issue #21 完成。当前剩余 MVP 路线从导出 zip 开始，随后是 API/E2E 加固。
+注：第 3、4 项已由 ADR-0006 / Issue #15 完成，第 5 项已由 ADR-0009 / Issue #20 完成，第 6 项已由 ADR-0010 / Issue #21 完成，第 7 项已由 ADR-0011 / Issue #22 完成。当前剩余 MVP 路线从 API/E2E 加固开始。
 
 ### ADR-0005: 落地版本、生成、对话和导出记录持久化服务边界
 
@@ -1167,7 +1167,8 @@ and quota usage.
 
 - The first P0 generation entry is now connected to the existing auth, project,
   version, conversation, generation-result, and quota boundaries.
-- Zip export and full iterative modification remain separate MVP stages.
+- Zip export has since landed in ADR-0011. Full iterative modification remains
+  a separate MVP stage.
   Version history and rollback UI have since landed in ADR-0010.
 - Provider failures are surfaced to the project list as a generic user-facing
   error. Raw provider errors and keys are not exposed to browser code.
@@ -1184,7 +1185,7 @@ and quota usage.
 
 No P1/P2 scope is added. This ADR implements the existing P0 generation entry.
 Preview runtime has since landed in ADR-0009, and version UI has since landed in
-ADR-0010; export packaging remains a later stage.
+ADR-0010; export packaging has since landed in ADR-0011.
 
 ## ADR-0007: Pre-Sandpack Safety Boundary Hardening
 
@@ -1212,8 +1213,8 @@ as untrusted runtime data instead of relying on TypeScript casts.
   environment files, and other sensitive paths.
 - Add `validateVersionSnapshot` and use it in the project repository before a
   persisted current version snapshot reaches the workspace UI.
-- Keep export zip packaging as a later MVP stage. Version history and rollback
-  UI have since landed in ADR-0010.
+- Export zip packaging has since landed in ADR-0011. Version history and
+  rollback UI have since landed in ADR-0010.
 
 ### Consequences
 
@@ -1318,9 +1319,9 @@ database service-role clients, or project write APIs.
   manifests, custom dependencies, package scripts, or expanded external
   resources.
 - Keep code view and prototype boundary messaging visible in the workspace.
-- Preserve export zip, runtime repair loops, and click-to-select DOM mapping as
-  later MVP stages. Version history and rollback UI have since landed in
-  ADR-0010.
+- Preserve runtime repair loops and click-to-select DOM mapping as later MVP
+  stages. Version history and rollback UI have since landed in ADR-0010, and
+  export zip packaging has since landed in ADR-0011.
 
 ### Consequences
 
@@ -1347,8 +1348,8 @@ database service-role clients, or project write APIs.
 ### MVP Scope Impact
 
 No P1/P2 scope is added. This ADR implements the existing MVP controlled preview
-stage. Version UI has since landed in ADR-0010; export and deployment hardening
-remain separate stages.
+stage. Version UI has since landed in ADR-0010, and export packaging has since
+landed in ADR-0011. Deployment hardening remains a separate stage.
 
 ## ADR-0010: Version History And Project Rollback UI
 
@@ -1408,3 +1409,64 @@ snapshot data.
 No P1/P2 scope is added. This ADR completes the MVP project-level version
 history and rollback UI stage while explicitly excluding page-level rollback,
 version branches, cross-version merges, and visual diff.
+
+## ADR-0011: Server Zip And Static Export
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #22 implements the MVP export stage after controlled Sandpack preview and
+project-level rollback. Export must be based on an authenticated user's project
+and version records, not on browser-supplied owner ids, snapshots, or assembled
+file trees. The exported artifact must also preserve the prototype boundary so
+users do not mistake generated files for a production-ready application.
+
+### Decision
+
+- Add `src/server/export/zipWriter.ts` as a minimal server-side ZIP writer with
+  path normalization and duplicate entry rejection.
+- Add `src/server/export/exportArchive.ts` to build `static` and
+  `editable-project` archive contents from a validated `VersionSnapshot`.
+- Re-run `validateVersionSnapshot` and `validateGeneratedFilePath` during export
+  even when the workspace already loaded a validated snapshot.
+- Add `createProjectExportZip` to record export quota usage and export records
+  before returning archive bytes.
+- Add `exportProjectVersionForCurrentUser` so export resolves the current user
+  and loads the project/current version or historical version on the server.
+- Add `/export` as a route handler that accepts only `projectId`, optional
+  `versionId`, and `exportType`; it never accepts `ownerId` or raw snapshots.
+- Add workspace download links for static ZIP and editable ZIP exports.
+- Include a root `README.md` in each export with prototype and development
+  starting point language.
+
+### Consequences
+
+- Users can download the current validated version as either a static prototype
+  ZIP or an editable project ZIP.
+- Export records and quota usage now represent real download attempts rather
+  than manifest-only preparation.
+- Browser code still does not perform database writes, service-role access,
+  snapshot validation, or ZIP assembly.
+
+### Risks
+
+- The ZIP writer intentionally uses stored entries without compression. This is
+  acceptable under the current 30 file / 200KB per file / 1MB total snapshot
+  limits, but richer future exports may need a library or background job.
+- The static export is a conservative offline representation that preserves
+  page files and source code; it is not a production app build pipeline.
+- Full API/E2E coverage for unauthenticated export redirects, cross-user export
+  denial, and browser download behavior remains in the next hardening stage.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR completes the server-side MVP zip/static
+download entry while explicitly excluding public sharing, downstream tool
+targeting, export queues, payment, team collaboration, Figma import, image/file
+parsing, and real backend business logic generation. The full PRD export
+experience still needs hardening in the next stage: export dialog, explicit
+pre-export checklist, export-in-progress state, export-success UI, retry flow,
+and API/E2E coverage.

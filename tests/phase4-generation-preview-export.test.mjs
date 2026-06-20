@@ -77,10 +77,10 @@ const workspace = readText("src/features/workspace/components/WorkspacePage.tsx"
 [
   "P0 project workspace",
   "Selection context",
-  "version history UI",
+  "Version history",
   "Export current version",
-  "Sandpack pending",
-  "Prototype boundary"
+  "ControlledSandpackPreview",
+  "Live preview"
 ].forEach((marker) => assert.match(workspace, new RegExp(marker)));
 
 const architecture = readText("docs/architecture.md");

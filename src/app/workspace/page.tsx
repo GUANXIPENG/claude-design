@@ -1,11 +1,26 @@
 import { WorkspacePage } from "@/features/workspace/components/WorkspacePage";
 import { requireCurrentUser } from "@/server/auth/session";
-import { getWorkspaceProjectForCurrentUser } from "@/server/projects/projectService";
+import {
+  getWorkspaceProjectForCurrentUser,
+  listProjectVersionsForCurrentUser
+} from "@/server/projects/projectService";
 
 export const dynamic = "force-dynamic";
 
 type WorkspaceRouteProps = {
-  searchParams?: Promise<{ projectId?: string }> | { projectId?: string };
+  searchParams?:
+    | Promise<{
+        exportError?: string;
+        projectId?: string;
+        versionError?: string;
+        versionRestored?: string;
+      }>
+    | {
+        exportError?: string;
+        projectId?: string;
+        versionError?: string;
+        versionRestored?: string;
+      };
 };
 
 export default async function WorkspaceRoute({ searchParams }: WorkspaceRouteProps) {
@@ -15,6 +30,7 @@ export default async function WorkspaceRoute({ searchParams }: WorkspaceRoutePro
   const workspaceProject = projectId
     ? await getWorkspaceProjectForCurrentUser(projectId)
     : null;
+  const versionHistory = projectId ? await listProjectVersionsForCurrentUser(projectId) : [];
   const serializedWorkspaceProject = workspaceProject
     ? {
         currentVersion: workspaceProject.currentVersion,
@@ -24,10 +40,25 @@ export default async function WorkspaceRoute({ searchParams }: WorkspaceRoutePro
         }
       }
     : null;
+  const serializedVersionHistory = versionHistory.map((version) => ({
+    ...version,
+    createdAt: version.createdAt.toISOString()
+  }));
+  const versionMessage = resolvedSearchParams?.versionRestored
+    ? "Version restored. A new current version was created."
+    : resolvedSearchParams?.versionError
+      ? "Version restore failed. The current version was not changed."
+      : null;
+  const exportMessage = resolvedSearchParams?.exportError
+    ? "Export failed. The current project and version were not changed."
+    : null;
 
   return (
     <WorkspacePage
       authUserEmail={user.email}
+      exportMessage={exportMessage}
+      versionHistory={serializedVersionHistory}
+      versionMessage={versionMessage}
       workspaceProject={serializedWorkspaceProject}
     />
   );

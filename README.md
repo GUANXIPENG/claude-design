@@ -1,7 +1,9 @@
 # AI Design Workspace
 
-Issue #15 adds the first authenticated P0 project generation entry on top of
-the existing scaffold, auth, persistence, schema, and version foundations.
+Issue #23 hardens the API/E2E and deployment readiness layer on top of the
+existing authenticated P0 project generation, auth, persistence, schema,
+controlled Sandpack preview, version rollback, and server ZIP export
+foundations.
 
 ## Current Stage
 
@@ -24,11 +26,24 @@ This is not the full MVP. The app now establishes:
   versions, generation records, conversation messages, and quota usage records.
 - Workspace loading from `/workspace?projectId=<id>` using the persisted current
   version snapshot.
-- Phase 1 through Phase 5 verification scripts.
+- Pre-Sandpack safety gates for service-only business writes, server-side prompt
+  validation, canonical generated file paths, and generated file size/count
+  limits.
+- Controlled Sandpack preview for validated current-version snapshots.
+- Version history UI with historical preview, second confirmation, and
+  project-level rollback that creates a new current version record.
+- Server-side static and editable-project ZIP export for validated current
+  version snapshots, including export records, quota records, and prototype
+  boundary README content.
+- The current export entry is a direct server download link. The full PRD export
+  dialog, pre-export checklist, in-progress state, success state, and retry flow
+  remain future UI work after the first API/E2E hardening pass.
+- Phase 1 through Phase 9 verification scripts.
+- Playwright protected-route smoke coverage for public pages, authenticated
+  redirects, and export-route failure redirects.
 
-The workspace still uses a metadata/code preview rather than Sandpack. Sandpack
-runtime preview, export packaging, version rollback UI, and real payment or
-subscription logic are intentionally not implemented yet.
+Cross-user API/E2E coverage, full export dialog UX, real deployment verification,
+and real payment or subscription logic are intentionally not implemented yet.
 
 ## Setup
 
@@ -48,6 +63,7 @@ Run the available checks:
 
 ```bash
 npm run test
+npm run test:e2e
 npm run typecheck
 npm run lint
 npm run build
@@ -74,11 +90,30 @@ AI generation variables:
 OpenAI API keys, Supabase service role keys, and database URLs must stay
 server-only. Browser code may only use the public Supabase URL and anon key.
 
+## Deployment
+
+Vercel is the intended MVP deployment target. Configure these variables in the
+Vercel project settings before testing a preview or production deployment:
+
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_DATABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+
+Do not commit real values. Supabase migrations and RLS policies must be applied
+to the target project before release. The OpenAI key is required only on the
+server side for real generation calls; automated tests use deterministic mocks
+where possible.
+
 ## Project Boundaries
 
-Issue #15 connects the first authenticated generation entry and lets the
-workspace read a persisted current version snapshot. Future work should keep
-business logic out of `src/app` route files where possible and use:
+Issue #23 keeps export packaging behind server-side owner checks and validated
+snapshot boundaries, while adding portable Playwright smoke coverage and
+deployment notes. Future work should keep business logic out of `src/app`
+route files where possible and use:
 
 - `src/features` for frontend product areas.
 - `src/lib/fixtures` for mock data that must not become the production data
@@ -87,6 +122,10 @@ business logic out of `src/app` route files where possible and use:
 - `src/server/db` for Drizzle schema and database client setup.
 - `src/server/projects` for project ownership and persistence logic.
 - `src/server/quota` for operation-count quota records.
+- `src/server/versions` for version history, snapshot validation, and rollback
+  orchestration.
+- `src/server/export` for manifest preparation, ZIP archive creation, export
+  records, and export quota usage.
 - `src/schemas` for runtime validation.
 - `src/prompts` for auditable prompt templates.
 - `src/types` for shared TypeScript types.

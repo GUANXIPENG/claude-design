@@ -1,12 +1,12 @@
 # AI Design Workspace 技术栈锁定与架构草案
 
-最后更新：2026-05-23
+最后更新：2026-05-27
 
 ## 1. 文档定位与当前仓库状态
 
 本文档是当前 MVP 阶段的技术决策基线，用于指导“类似 Claude Design 的 AI 设计生成网站”的持续实现。它不是永久架构，也不是最终工程实现说明。后续每次重要架构变化都必须在本文档的 ADR 记录中说明：为什么要改、改了什么、影响哪些模块、是否引入新风险、是否影响 MVP 范围。
 
-当前仓库已经包含 Phase 1 scaffold、Phase 2 前端工作台壳、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、Issue #15 server-only OpenAI Responses provider 与 P0 项目生成入口，以及已在真实 Supabase 项目验证通过的 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
+当前仓库已经包含 Phase 1 scaffold、Phase 2 前端工作台壳、Phase 3 Supabase Auth/Drizzle 基础层、Phase 4 生成输出校验、mock provider、版本快照、导出 manifest 服务边界、版本/生成/对话/导出记录持久化边界、Issue #15 server-only OpenAI Responses provider 与 P0 项目生成入口、Issue #18 pre-Sandpack user profile upsert、严格生成文件路径校验、persisted snapshot 运行时校验和 auth callback returnTo 站内路径限制、Issue #19 Sandpack readiness service-only business writes、prompt/file limit 和规范化 snapshot 返回、Issue #20 Sandpack controlled preview，以及已在真实 Supabase 项目验证通过的初始 migration/RLS。本文档同时保留早期 ADR 以解释技术栈来源，并在后续 ADR 中记录已落地变化。
 
 ### 1.1 已读取的仓库内容
 
@@ -26,7 +26,7 @@
 - Phase 4 生成 schema、AI provider adapter、generation/version/export 服务边界。
 - Phase 1 到 Phase 4 的脚本级测试。
 
-当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider 与 P0 项目生成入口已落地。仍未完成 Sandpack runtime、导出 zip 下载、版本历史/回退 UI、Playwright E2E 和生产部署配置。
+当前已补齐本地 Supabase migration/RLS SQL 文件，并已在真实 Supabase 项目 `qhetmxcgwdifgkpvqrri` 执行和验证跨用户 RLS 隔离；server-only OpenAI provider、P0 项目生成入口、Sandpack 前置安全门槛、Sandpack controlled preview、版本历史和项目级回退 UI、服务器端 zip/static export 下载入口已落地。Issue #23 已开始补 API/E2E/部署加固：新增 Playwright 配置和 protected routes HTTP smoke，优先验证 public routes、未登录 `/projects`、`/workspace` 和 `/export` 登录跳转。仍未完成完整 PRD 导出弹窗/前置检查/进度/成功状态和真实部署复验。
 
 ### 1.2 架构目标
 
@@ -837,7 +837,7 @@ MVP 基线采用：
 | 问题 | 说明 | 推荐处理 |
 |---|---|---|
 | PRD 曾避免技术选型 | PRD 明确不讨论工程实现，而架构文档需要锁定技术栈 | 不冲突；PRD 是产品文档，本文档是架构基线 |
-| Phase 4/Issue #15 基础层不等于完整 MVP 闭环 | 当前已有 schema、mock provider、server-only OpenAI provider、P0 生成入口、版本/生成/对话/导出持久化边界和导出 manifest 服务边界，但 Sandpack runtime、版本历史 UI、完整迭代修改和 zip 下载尚未完成 | 在 PROJECT_STATUS 中持续区分“生成入口已实现”和“完整 MVP 闭环未实现” |
+| Phase 4/Issue #15 基础层不等于完整 MVP 闭环 | 当前已有 schema、mock provider、server-only OpenAI provider、P0 生成入口、版本/生成/对话/导出持久化边界、导出 manifest 服务边界、Sandpack controlled preview、Issue #21 版本历史/回退 UI 和 Issue #22 服务器端 ZIP 下载入口，但完整迭代修改、完整 PRD 导出体验和 API/E2E 加固尚未完成 | 在 PROJECT_STATUS 中持续区分“生成入口/预览/回退/下载入口已实现”和“完整 MVP 闭环未实现” |
 | Supabase RLS 已验证但仍有性能优化项 | 真实 Supabase migration/RLS 已执行并验证跨用户隔离；performance advisor 提示 `auth_rls_initplan` | Issue #14 优化 policy 中适用的 `auth.uid()` 调用为 `(select auth.uid())` 并复跑 advisor |
 
 ### 6.2 待确认问题
@@ -876,6 +876,10 @@ MVP 基线采用：
 - 前端组件不访问数据库。
 - UI 不直接调用 AI provider。
 - 生成结果必须服务端校验后才能保存、预览和导出。
+- 生成 prompt 必须在服务端校验非空且不超过 4000 字符，客户端 `maxLength` 只能作为 UI 辅助。
+- 生成文件必须限制为最多 30 files、单文件最大 200KB、总计最大 1MB。
+- `sanitizeGeneratedProject` 和 `validateVersionSnapshot` 必须返回规范化后的安全路径，页面引用、预览和导出不能使用未规范化路径。
+- 业务表写入采用 service-only business writes 优先，浏览器 authenticated client 不能绕过服务端编排直接写项目、版本、生成、导出或额度数据。
 - localStorage 不能作为项目主存储。
 - Sandpack 不是完整安全策略，只是预览运行环境的一部分。
 - 架构变化必须写 ADR。
@@ -964,7 +968,7 @@ Phase 4 基础层采用：
 - `src/server/generation/generationService.ts` 编排 generate / iterate，调用 provider、校验输出、记录额度并创建版本快照。
 - `src/server/versions/versionService.ts` 提供项目级版本快照和 rollback 记录边界；rollback 创建新的当前版本记录，不改写历史版本。
 - `src/server/export/exportService.ts` 基于版本快照准备安全导出 manifest，并记录 export 使用次数。
-- 工作台 UI 展示 Phase 4 的选区上下文、版本回退和导出状态，但仍明确预览内容来自 fixture，真实 Sandpack 运行时待接入。
+- 工作台 UI 当时展示 Phase 4 的选区上下文、版本回退和导出状态，并明确预览内容来自 fixture；该预览已由 ADR-0009 的 Sandpack controlled preview 取代。
 
 #### 备选方案
 
@@ -990,9 +994,9 @@ Phase 4 基础层采用：
 #### 风险
 
 - 当前 provider 是 mock provider，不能代表真实模型质量或 OpenAI Responses API 行为。
-- 当前导出服务只准备 manifest，还没有生成 zip 或下载文件。
+- ADR-0003 当时导出服务只准备 manifest，还没有生成 zip 或下载文件；当前已由 ADR-0011 接入服务器端 ZIP 下载。
 - 当前版本服务只建立快照/rollback 数据边界，还没有写入数据库。
-- 当前工作台仍使用 fixture 预览，真实 Sandpack 运行时和错误 overlay 待后续 Issue 接入。
+- 当时工作台仍使用 fixture 预览；当前已由 ADR-0009 接入 Sandpack controlled preview，运行错误修复仍待后续 Issue。
 
 #### 是否影响 MVP 范围
 
@@ -1001,9 +1005,9 @@ Phase 4 基础层采用：
 #### 后续动作
 
 - 用真实 OpenAI Responses API provider 替换 mock provider，并保留同一 `AiProvider` 接口。
-- 接入 Sandpack，把通过 schema 校验的文件树载入受控预览。
+- Sandpack controlled preview 已由 ADR-0009 接入；版本历史和项目级回退 UI 已由 ADR-0010 接入；zip/static export 已由 ADR-0011 接入；下一步补 API/E2E 加固。
 - 版本快照、生成记录、对话记录和导出记录写入 Supabase 的 repository 边界已由 ADR-0005 落地；真实数据库 schema/RLS 验证已由 Issue #13 完成。
-- 实现导出 zip / 静态包下载。
+- Issue #22 已实现导出 zip / 静态包下载；下一步补完整导出体验状态和 API/E2E 覆盖。
 
 ### ADR-0004: 补齐 Supabase migration 与 RLS policy 基础层
 
@@ -1076,7 +1080,7 @@ Phase 4 后续实现必须遵守依赖顺序。真实模型、预览 runtime、�
 
 该顺序不改变 MVP 范围；它只是把 ADR-0003 后续动作拆成可验证的工程步骤。
 
-注：第 3、4 项已由 ADR-0006 / Issue #15 完成。当前剩余 MVP 路线从 Sandpack 受控预览开始，随后是版本 UI、导出 zip 和 API/E2E 加固。
+注：第 3、4 项已由 ADR-0006 / Issue #15 完成，第 5 项已由 ADR-0009 / Issue #20 完成，第 6 项已由 ADR-0010 / Issue #21 完成，第 7 项已由 ADR-0011 / Issue #22 完成。当前剩余 MVP 路线从 API/E2E 加固开始。
 
 ### ADR-0005: 落地版本、生成、对话和导出记录持久化服务边界
 
@@ -1163,8 +1167,9 @@ and quota usage.
 
 - The first P0 generation entry is now connected to the existing auth, project,
   version, conversation, generation-result, and quota boundaries.
-- Sandpack runtime, zip export, version history UI, rollback UI, and full
-  iterative modification remain separate MVP stages.
+- Zip export has since landed in ADR-0011. Full iterative modification remains
+  a separate MVP stage.
+  Version history and rollback UI have since landed in ADR-0010.
 - Provider failures are surfaced to the project list as a generic user-facing
   error. Raw provider errors and keys are not exposed to browser code.
 
@@ -1178,5 +1183,344 @@ and quota usage.
 
 ### MVP Scope Impact
 
-No P1/P2 scope is added. This ADR implements the existing P0 generation entry
-and keeps preview runtime, export packaging, and version UI for later stages.
+No P1/P2 scope is added. This ADR implements the existing P0 generation entry.
+Preview runtime has since landed in ADR-0009, and version UI has since landed in
+ADR-0010; export packaging has since landed in ADR-0011.
+
+## ADR-0007: Pre-Sandpack Safety Boundary Hardening
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #18 addresses safety gaps found before connecting persisted generated
+files to a live Sandpack runtime. The P0 generation entry can now persist
+version snapshots, so the workspace preview path must treat database snapshots
+as untrusted runtime data instead of relying on TypeScript casts.
+
+### Decision
+
+- Add `ensureUserProfile` in `src/server/auth/userProfile.ts` and call it from
+  protected session resolution and the Supabase auth callback. First-time auth
+  users now get an idempotent `user_profiles` upsert before project writes.
+- Add shared auth `returnTo` sanitization so login callbacks and magic-link
+  redirects only accept same-origin paths.
+- Tighten generated file validation in `src/schemas/generation.ts`. Generated
+  files are limited to prototype front-end files and explicitly reject server
+  routes, actions, middleware, package manifests, scripts, dependency folders,
+  environment files, and other sensitive paths.
+- Add `validateVersionSnapshot` and use it in the project repository before a
+  persisted current version snapshot reaches the workspace UI.
+- Export zip packaging has since landed in ADR-0011. Version history and
+  rollback UI have since landed in ADR-0010.
+
+### Consequences
+
+- The next Sandpack issue can start from a stricter, tested snapshot boundary.
+- Invalid persisted snapshots now fail during workspace load instead of being
+  passed through as trusted `VersionSnapshot` data.
+- User profile creation is no longer an implicit prerequisite that can break
+  first project generation for a newly authenticated user.
+
+### Risks
+
+- The file allowlist is intentionally conservative. Some legitimate prototype
+  assets may need explicit support in a future issue before Sandpack or export
+  can use them.
+- Real Supabase Auth and OpenAI provider calls still require valid local
+  environment variables for end-to-end manual verification.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR only hardens the existing P0 generation,
+auth, persistence, and preview-read boundaries before the Sandpack stage.
+
+## ADR-0008: Sandpack Readiness Safety Gate
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #19 closes the remaining blockers before generated files can be connected
+to a live Sandpack preview. Code review found that authenticated browser clients
+could still write business tables through Supabase Data API policies, generated
+file paths were validated but not always returned in canonical form, prompt
+length was only guarded by the client UI, and generated file count/size limits
+were missing.
+
+### Decision
+
+- Add `supabase/policies/0002_service_only_writes.sql` to drop authenticated
+  write policies and revoke direct INSERT/UPDATE/DELETE grants for business
+  tables. Service-side orchestration remains responsible for Zod validation,
+  path checks, owner checks, quota records, version writes, and export records.
+- Add a shared generation prompt schema. Server-side generation entry points
+  reject empty prompts and prompts longer than 4000 characters.
+- Limit generated output to 30 files, 200KB per file, and 1MB total file
+  content before saving, previewing, or exporting.
+- Return canonical safe paths from `sanitizeGeneratedProject` and
+  `validateVersionSnapshot`; duplicate paths after canonicalization are
+  rejected.
+- Keep Sandpack on the minimal controlled policy chosen for MVP: fixed React
+  template, no AI-supplied dependency manifest, no arbitrary package scripts,
+  and no expanded external resource capability.
+
+### Consequences
+
+- Sandpack can consume a validated `VersionSnapshot` without reconciling raw AI
+  path variants in the browser.
+- Browser code still cannot call OpenAI, service-role database clients, or
+  write project/version/export/quota records directly.
+- Future iterate, rollback, and export stages must reuse the same prompt,
+  snapshot, path, and file-limit schemas.
+
+### Risks
+
+- The service-only business writes SQL must be applied to the real Supabase
+  project before production release; the repository test verifies markers but
+  does not mutate the remote database.
+- The 30 files / 200KB / 1MB limits are intentionally conservative and may need
+  a later ADR if richer prototypes require larger assets.
+- Issue #14 RLS performance optimization remains independent and should not be
+  mixed into Sandpack implementation unless it becomes a deployment blocker.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR only closes the safety gate required before
+the MVP Sandpack controlled preview stage.
+
+## ADR-0009: Sandpack Controlled Preview
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #20 implements the MVP Sandpack controlled preview after Issue #19 closed
+the pre-Sandpack safety gate. The workspace already reads a persisted current
+version snapshot through the server repository boundary, so the browser preview
+can consume that validated `VersionSnapshot` without contacting OpenAI,
+database service-role clients, or project write APIs.
+
+### Decision
+
+- Install `@codesandbox/sandpack-react@2.20.0`.
+- Add `src/features/preview` with a client-only
+  `ControlledSandpackPreview` component.
+- Map the selected validated page file into a fixed React Sandpack file tree:
+  `/src/App.tsx`, `/src/main.tsx`, `/src/styles.css`, and safe component/style
+  files derived from the snapshot.
+- Use Sandpack `template="react-ts"` and do not pass AI-supplied package
+  manifests, custom dependencies, package scripts, or expanded external
+  resources.
+- Keep code view and prototype boundary messaging visible in the workspace.
+- Preserve runtime repair loops and click-to-select DOM mapping as later MVP
+  stages. Version history and rollback UI have since landed in ADR-0010, and
+  export zip packaging has since landed in ADR-0011.
+
+### Consequences
+
+- The workspace now has a real Sandpack controlled preview surface instead of a
+  metadata-only preview.
+- Preview remains a browser runtime for already validated front-end prototype
+  files; it is not a security boundary for secrets, database writes, auth, quota,
+  export, or AI calls.
+- Snapshot-to-Sandpack mapping is isolated in a pure helper so empty, error, and
+  file-tree behavior can be tested without browser automation.
+
+### Risks
+
+- Generated files may still fail at runtime if model output imports unsupported
+  aliases or relies on dependencies outside the fixed React template. Later
+  repair and prompt work should address this without allowing arbitrary
+  dependency installation.
+- Sandpack package installation added transitive npm audit advisories; these
+  should be tracked separately from the MVP preview wiring unless they block
+  deployment.
+- Playwright visual smoke coverage is still deferred to the API/E2E hardening
+  stage.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR implements the existing MVP controlled preview
+stage. Version UI has since landed in ADR-0010, and export packaging has since
+landed in ADR-0011. Deployment hardening remains a separate stage.
+
+## ADR-0010: Version History And Project Rollback UI
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #21 implements the MVP version history and rollback step after Sandpack
+controlled preview. The repository already persists project versions and the
+workspace already loads a validated current-version snapshot, so rollback must
+reuse those server-side boundaries instead of trusting browser-supplied owner or
+snapshot data.
+
+### Decision
+
+- Add owner-scoped version repository functions for listing, reading, and
+  rolling back project versions.
+- Load version history in the `/workspace` server route using the current
+  authenticated user and project id.
+- Add `rollbackVersionAction` as the only browser-triggered rollback entry. It
+  accepts `projectId` and `versionId`, then resolves the current user on the
+  server.
+- Do not accept `ownerId`, raw snapshot data, or version metadata from the
+  browser for rollback writes.
+- Re-run `validateVersionSnapshot` before returning historical versions or
+  persisting a rollback-derived version.
+- Persist rollback as a new current project version with `reason: "rollback"`;
+  historical version rows are not mutated.
+- Let the workspace preview a historical version snapshot without changing the
+  current version until the user confirms restore.
+- Keep page-level rollback, version branching, cross-version merge, and visual
+  diff out of the MVP stage.
+
+### Consequences
+
+- Users can inspect prior project-level snapshots and restore a known-good
+  version without losing the state that existed immediately before rollback.
+- The browser can display historical snapshot previews, but database writes
+  still happen through server-side owner checks and repository orchestration.
+- Rollback becomes a reusable owner-checked boundary for later API/E2E tests and
+  deployment hardening.
+
+### Risks
+
+- The current UI uses an inline panel rather than a dedicated dialog; later UX
+  work may split it into a feature component if the workspace shell grows.
+- Conversation context reconciliation after rollback is still minimal. The
+  rollback record preserves the restored snapshot, but full chat-history
+  alignment remains later iterative-modification work.
+- API/E2E tests still need to cover unauthenticated, cross-user, failed
+  rollback, and visual preview paths before production release.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR completes the MVP project-level version
+history and rollback UI stage while explicitly excluding page-level rollback,
+version branches, cross-version merges, and visual diff.
+
+## ADR-0011: Server Zip And Static Export
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #22 implements the MVP export stage after controlled Sandpack preview and
+project-level rollback. Export must be based on an authenticated user's project
+and version records, not on browser-supplied owner ids, snapshots, or assembled
+file trees. The exported artifact must also preserve the prototype boundary so
+users do not mistake generated files for a production-ready application.
+
+### Decision
+
+- Add `src/server/export/zipWriter.ts` as a minimal server-side ZIP writer with
+  path normalization and duplicate entry rejection.
+- Add `src/server/export/exportArchive.ts` to build `static` and
+  `editable-project` archive contents from a validated `VersionSnapshot`.
+- Re-run `validateVersionSnapshot` and `validateGeneratedFilePath` during export
+  even when the workspace already loaded a validated snapshot.
+- Add `createProjectExportZip` to record export quota usage and export records
+  before returning archive bytes.
+- Add `exportProjectVersionForCurrentUser` so export resolves the current user
+  and loads the project/current version or historical version on the server.
+- Add `/export` as a route handler that accepts only `projectId`, optional
+  `versionId`, and `exportType`; it never accepts `ownerId` or raw snapshots.
+- Add workspace download links for static ZIP and editable ZIP exports.
+- Include a root `README.md` in each export with prototype and development
+  starting point language.
+
+### Consequences
+
+- Users can download the current validated version as either a static prototype
+  ZIP or an editable project ZIP.
+- Export records and quota usage now represent real download attempts rather
+  than manifest-only preparation.
+- Browser code still does not perform database writes, service-role access,
+  snapshot validation, or ZIP assembly.
+
+### Risks
+
+- The ZIP writer intentionally uses stored entries without compression. This is
+  acceptable under the current 30 file / 200KB per file / 1MB total snapshot
+  limits, but richer future exports may need a library or background job.
+- The static export is a conservative offline representation that preserves
+  page files and source code; it is not a production app build pipeline.
+- Full API/E2E coverage for unauthenticated export redirects, cross-user export
+  denial, and browser download behavior remains in the next hardening stage.
+
+### MVP Scope Impact
+
+No P1/P2 scope is added. This ADR completes the server-side MVP zip/static
+download entry while explicitly excluding public sharing, downstream tool
+targeting, export queues, payment, team collaboration, Figma import, image/file
+parsing, and real backend business logic generation. The full PRD export
+experience still needs hardening in the next stage: export dialog, explicit
+pre-export checklist, export-in-progress state, export-success UI, retry flow,
+and API/E2E coverage.
+
+## ADR-0012: API E2E And Deployment Hardening
+
+### Status
+
+Accepted
+
+### Context
+
+Issue #23 starts the final MVP hardening stage after server-side ZIP export.
+The app has protected routes, server actions, validated Sandpack input,
+rollback, and export downloads, but release readiness requires route-level
+checks, a repeatable Playwright entry point, and deployment documentation for
+Vercel, Supabase, and OpenAI environment variables.
+
+### Decision
+
+- Add `@playwright/test` as a development dependency.
+- Add `playwright.config.ts` with a production `next start` web server and a
+  `tests/e2e` test directory.
+- Add HTTP-level protected route smoke tests for `/`, `/login`, `/projects`,
+  `/workspace`, and `/export`.
+- Use Playwright's request fixture for the first hardening tests so the suite can
+  validate redirects without requiring browser screenshot assets.
+- Add `npm run start` and `npm run test:e2e` scripts.
+- Keep real OpenAI and Supabase credentials out of automated tests; use existing
+  mock/schema/service tests for deterministic behavior.
+- Document Vercel/Supabase/OpenAI environment variables without committing
+  secrets.
+
+### Consequences
+
+- Unauthenticated access to private project, workspace, and export routes is now
+  covered by an E2E smoke suite.
+- Production server startup is standardized for local verification and web
+  usability checks.
+- Deployment readiness is documented without changing the app's runtime
+  architecture or adding new product scope.
+
+### Risks
+
+- Browser-based visual Playwright coverage is still limited; the first suite
+  focuses on route and redirect correctness.
+- Real Supabase Auth and OpenAI provider calls still require valid local or
+  deployment environment variables before manual production verification.
+- Windows uses `npx.cmd` in the Playwright webServer command for the current
+  Codex/local environment; deployment itself should continue using Vercel's
+  normal Next.js build flow.
+
+### MVP Scope Impact
+
+No P1/P2 product scope is added. This ADR hardens the existing MVP routes and
+deployment notes while keeping payment, teams, public sharing, Figma import,
+image/file parsing, and real backend business logic generation out of scope.

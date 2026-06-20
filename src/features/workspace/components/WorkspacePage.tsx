@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { VersionSnapshot } from "@/schemas/generation";
+import { ControlledSandpackPreview } from "@/features/preview/components/ControlledSandpackPreview";
+import { rollbackVersionAction } from "@/server/versions/actions";
 
 type ProjectWorkspaceSnapshot = {
   currentVersion: {
@@ -24,13 +26,41 @@ type SelectionState = {
   scope: string;
 };
 
+type VersionHistoryItem = {
+  createdAt: string;
+  id: string;
+  isCurrent: boolean;
+  projectId: string;
+  snapshot: VersionSnapshot;
+  summary: string;
+  versionNumber: number;
+};
+
 type WorkspacePageProps = {
   authUserEmail: string | null;
+  exportMessage: string | null;
+  versionHistory: VersionHistoryItem[];
+  versionMessage: string | null;
   workspaceProject: ProjectWorkspaceSnapshot | null;
 };
 
-export function WorkspacePage({ authUserEmail, workspaceProject }: WorkspacePageProps) {
-  const snapshot = workspaceProject?.currentVersion?.snapshot ?? null;
+export function WorkspacePage({
+  authUserEmail,
+  exportMessage,
+  versionHistory,
+  versionMessage,
+  workspaceProject
+}: WorkspacePageProps) {
+  const currentVersion = workspaceProject?.currentVersion ?? null;
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [previewVersionId, setPreviewVersionId] = useState<string | null>(null);
+  const [confirmRollbackVersionId, setConfirmRollbackVersionId] = useState<string | null>(
+    null
+  );
+  const previewVersion =
+    versionHistory.find((version) => version.id === previewVersionId) ?? null;
+  const activeVersion = previewVersion ?? currentVersion;
+  const snapshot = activeVersion?.snapshot ?? null;
   const pages = snapshot?.pages ?? [];
   const [selectedPageId, setSelectedPageId] = useState(pages[0]?.id ?? "");
   const [selection, setSelection] = useState<SelectionState | null>(null);
@@ -80,14 +110,39 @@ export function WorkspacePage({ authUserEmail, workspaceProject }: WorkspacePage
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="rounded-full border border-line px-3 py-1 text-muted">
-            Current version v{workspaceProject.currentVersion?.versionNumber ?? 0}
+            Current version v{currentVersion?.versionNumber ?? 0}
           </span>
-          <button className="rounded-md border border-line px-3 py-2" disabled type="button">
+          <button
+            className="rounded-md border border-line px-3 py-2"
+            onClick={() => setIsVersionHistoryOpen((isOpen) => !isOpen)}
+            type="button"
+          >
             Version history
           </button>
-          <button className="rounded-md bg-accent px-3 py-2 text-white" disabled type="button">
-            Export current version
-          </button>
+          {currentVersion ? (
+            <>
+              <Link
+                className="rounded-md bg-accent px-3 py-2 text-white"
+                href={`/export?projectId=${workspaceProject.project.id}&versionId=${currentVersion.id}&exportType=static`}
+              >
+                Download static ZIP
+              </Link>
+              <Link
+                className="rounded-md border border-line px-3 py-2"
+                href={`/export?projectId=${workspaceProject.project.id}&versionId=${currentVersion.id}&exportType=editable-project`}
+              >
+                Download editable ZIP
+              </Link>
+            </>
+          ) : (
+            <button
+              className="rounded-md bg-accent px-3 py-2 text-white opacity-60"
+              disabled
+              type="button"
+            >
+              Export current version
+            </button>
+          )}
         </div>
       </header>
 
@@ -121,34 +176,39 @@ export function WorkspacePage({ authUserEmail, workspaceProject }: WorkspacePage
         <section className="min-h-[560px] p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold">Preview metadata</h2>
+              <h2 className="text-sm font-semibold">Live preview</h2>
               <p className="text-xs text-muted">
                 {selectedPage?.purpose ?? "This project has no generated pages yet."}
               </p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-xs text-muted">
-              Sandpack pending
+              {previewVersion ? `Preview version v${previewVersion.versionNumber}` : "Current version"}
             </span>
           </div>
 
-          <div className="rounded-lg border border-line bg-white p-6 shadow-sm">
-            <div className="rounded-md border border-line bg-canvas p-6">
-              <p className="text-xs font-medium uppercase tracking-[0.12em] text-accent">
-                Prototype boundary
-              </p>
-              <h3 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight">
-                {snapshot?.project.name ?? workspaceProject.project.name}
-              </h3>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
-                {snapshot?.project.description ??
-                  workspaceProject.project.description ??
-                  "No generated description was saved."}
-              </p>
-              <p className="mt-4 max-w-2xl text-xs leading-5 text-muted">
-                {snapshot?.prototypeBoundaryNotice}
-              </p>
+          {previewVersion ? (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-white px-4 py-3 text-sm shadow-sm">
+              <span>
+                Previewing version v{previewVersion.versionNumber}. Current version is not
+                changed until restore is confirmed.
+              </span>
+              <button
+                className="rounded-md border border-line px-3 py-2 text-xs"
+                onClick={() => {
+                  setConfirmRollbackVersionId(null);
+                  setPreviewVersionId(null);
+                }}
+                type="button"
+              >
+                Return to current version
+              </button>
             </div>
-          </div>
+          ) : null}
+
+          <ControlledSandpackPreview
+            selectedFilePath={selectedPage?.filePath ?? null}
+            snapshot={snapshot}
+          />
 
           <div className="mt-4 rounded-lg border border-line bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
@@ -162,11 +222,111 @@ export function WorkspacePage({ authUserEmail, workspaceProject }: WorkspacePage
         </section>
 
         <aside className="border-t border-line bg-white p-4 lg:border-l lg:border-t-0">
+          {versionMessage ? (
+            <div className="mb-4 rounded-md border border-line bg-canvas p-3 text-xs leading-5 text-muted">
+              {versionMessage}
+            </div>
+          ) : null}
+          {exportMessage ? (
+            <div className="mb-4 rounded-md border border-line bg-canvas p-3 text-xs leading-5 text-muted">
+              {exportMessage}
+            </div>
+          ) : null}
           <div className="mb-4 rounded-md border border-line bg-canvas p-3 text-xs leading-5 text-muted">
             The current workspace displays persisted prototype metadata and safe
-            generated files. Sandpack runtime, version history UI, rollback UI,
-            and zip export are separate MVP stages.
+            generated files in a controlled Sandpack preview. Exports are
+            server-generated ZIP files with prototype boundary notes; full iterative
+            editing remains a separate MVP stage.
           </div>
+
+          {isVersionHistoryOpen ? (
+            <div className="mb-4 rounded-lg border border-line p-3">
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-accent">
+                Version history
+              </p>
+              {versionHistory.length ? (
+                <div className="mt-3 space-y-3">
+                  {versionHistory.map((version) => (
+                    <div
+                      className="rounded-md border border-line bg-white p-3"
+                      key={version.id}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium">
+                            v{version.versionNumber}
+                            {version.isCurrent ? " / Current version" : ""}
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-muted">
+                            {version.summary}
+                          </p>
+                          <p className="mt-1 text-[11px] text-muted">
+                            {new Date(version.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <button
+                          className="rounded-md border border-line px-2 py-1 text-xs"
+                          onClick={() => {
+                            setPreviewVersionId(version.id);
+                            setConfirmRollbackVersionId(null);
+                          }}
+                          type="button"
+                        >
+                          Preview version
+                        </button>
+                      </div>
+                      {!version.isCurrent ? (
+                        confirmRollbackVersionId === version.id ? (
+                          <form action={rollbackVersionAction} className="mt-3 space-y-2">
+                            <input
+                              name="projectId"
+                              type="hidden"
+                              value={workspaceProject.project.id}
+                            />
+                            <input name="versionId" type="hidden" value={version.id} />
+                            <p className="text-xs leading-5 text-muted">
+                              Confirm restore to version v{version.versionNumber}. A new
+                              current version record will be created.
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                className="rounded-md bg-accent px-3 py-2 text-xs font-medium text-white"
+                                type="submit"
+                              >
+                                Confirm restore
+                              </button>
+                              <button
+                                className="rounded-md border border-line px-3 py-2 text-xs"
+                                onClick={() => setConfirmRollbackVersionId(null)}
+                                type="button"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <button
+                            className="mt-3 rounded-md border border-line px-3 py-2 text-xs"
+                            onClick={() => {
+                              setPreviewVersionId(version.id);
+                              setConfirmRollbackVersionId(version.id);
+                            }}
+                            type="button"
+                          >
+                            Restore this version
+                          </button>
+                        )
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-muted">
+                  No version history yet.
+                </p>
+              )}
+            </div>
+          ) : null}
 
           <div className="mb-4 rounded-lg border border-line p-3">
             <div className="flex items-start justify-between gap-3">
